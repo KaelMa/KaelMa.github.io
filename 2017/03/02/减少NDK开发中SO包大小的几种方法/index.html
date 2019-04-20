@@ -1,11 +1,85 @@
 <!DOCTYPE html>
-<html>
-<head><meta name="generator" content="Hexo 3.8.0">
-  <meta charset="utf-8">
+
+
+
   
-  <title>减少Android NDK开发中SO包大小的几种方法 | KaelMa</title>
-  <meta name="viewport" content="width=device-width">
-  <meta name="description" content="背景这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。 下面整理了一些可以用于减少NDK开发中Android">
+
+
+<html class="theme-next mist use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="ndk,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="背景这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。 下面整理了一些可以用于减少NDK开发中Android">
 <meta name="keywords" content="ndk">
 <meta property="og:type" content="article">
 <meta property="og:title" content="减少Android NDK开发中SO包大小的几种方法">
@@ -17,62 +91,236 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="减少Android NDK开发中SO包大小的几种方法">
 <meta name="twitter:description" content="背景这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。 下面整理了一些可以用于减少NDK开发中Android">
-  
-    <link rel="alternative" href="/atom.xml" title="KaelMa" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/favicon.png">
-  
-  <link rel="stylesheet" href="/css/style.css">
-  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-  
-</head></html>
-<body>
-  <div id="container">
-    <div class="mobile-nav-panel">
-	<i class="icon-reorder icon-large"></i>
-</div>
-<header id="header">
-	<h1 class="blog-title">
-		<a href="/">KaelMa</a>
-	</h1>
-	<nav class="nav">
-		<ul>
-			<li><a href="/">Home</a></li><li><a href="/archives">Archives</a></li>
-			<li><a id="nav-search-btn" class="nav-icon" title="Search"></a></li>
-			<li><a href="/atom.xml" id="nav-rss-link" class="nav-icon" title="RSS Feed"></a></li>
-		</ul>
-	</nav>
-	<div id="search-form-wrap">
-		<form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
-	</div>
-</header>
-    <div id="main">
-      <article id="post-减少NDK开发中SO包大小的几种方法" class="post">
-	<footer class="entry-meta-header">
-		<span class="meta-elements date">
-			<a href="/2017/03/02/减少NDK开发中SO包大小的几种方法/" class="article-date">
-  <time datetime="2017-03-02T07:20:02.000Z" itemprop="datePublished">2017-03-02</time>
-</a>
-		</span>
-		<span class="meta-elements author">Ma Yuancheng</span>
-		<div class="commentscount">
-			
-		</div>
-	</footer>
-	
-	<header class="entry-header">
-		
-  
-    <h1 class="article-title entry-title" itemprop="name">
-      减少Android NDK开发中SO包大小的几种方法
-    </h1>
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/02/减少NDK开发中SO包大小的几种方法/">
+
+
+
+
+
+  <title>减少Android NDK开发中SO包大小的几种方法 | KaelMa</title>
   
 
-	</header>
-	<div class="entry-content">
-		
-    	<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。</p>
+
+
+
+
+
+
+
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">KaelMa</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Programmer & Dotaer</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/02/减少NDK开发中SO包大小的几种方法/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Ma Yuancheng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="KaelMa">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">减少Android NDK开发中SO包大小的几种方法</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-02T15:20:02+08:00">
+                2017-03-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/03/02/减少NDK开发中SO包大小的几种方法/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/03/02/减少NDK开发中SO包大小的几种方法/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。</p>
 <p>下面整理了一些可以用于减少NDK开发中Android SO包大小的方法：</p>
 <h2 id="1-STL的使用方式"><a href="#1-STL的使用方式" class="headerlink" title="1.STL的使用方式"></a>1.STL的使用方式</h2><p>对于C++的library，引用方式有2种：</p>
 <ul>
@@ -134,69 +382,406 @@
 <p>在做完代替之后，yoga包的体积从282KB减少到了218KB。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在做完这一系列工作后，最终成功的压缩了Yoga包的体积，从几M到最后输出一个218KB的AAR包提供使用。以上几种方法并不局限于Yoga包的缩减。在NDK开发中，要缩减SO包的体积都可以按照这几种方式尝试一下。</p>
 
+      
+    </div>
     
-	</div>
-	<footer class="entry-footer">
-		<div class="entry-meta-footer">
-			<span class="category">
-				
-			</span>
-			<span class="tags">
-				
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ndk/">ndk</a></li></ul>
+    
+    
 
-			</span>
-		</div>
-	</footer>
-	
     
-<nav id="article-nav">
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ndk/" rel="tag"># ndk</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/02/Android虚拟机中的内存分配与OOM问题/" rel="prev" title="Android虚拟机中的内存分配与OOM问题">
+                Android虚拟机中的内存分配与OOM问题 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
   
-    <a href="/2017/04/02/Android虚拟机中的内存分配与OOM问题/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          Android虚拟机中的内存分配与OOM问题
-        
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
       </div>
-    </a>
-  
-  
-</nav>
+    </div>
 
   
-</article>
 
 
 
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Ma Yuancheng</p>
+              <p class="site-description motion-element" itemprop="description">Programmer & Dotaer</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">tags</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/KaelMa" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-STL的使用方式"><span class="nav-number">2.</span> <span class="nav-text">1.STL的使用方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-不使用Exception和RTTI"><span class="nav-number">3.</span> <span class="nav-text">2.不使用Exception和RTTI</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RTTI"><span class="nav-number">3.1.</span> <span class="nav-text">RTTI</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Exception"><span class="nav-number">3.2.</span> <span class="nav-text">Exception</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-使用-gc-sections去除没有用到的函数"><span class="nav-number">4.</span> <span class="nav-text">3.使用 gc-sections去除没有用到的函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-去除冗余代码"><span class="nav-number">5.</span> <span class="nav-text">4.去除冗余代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-设置编译器的优化flag"><span class="nav-number">6.</span> <span class="nav-text">5.设置编译器的优化flag</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-设置编译器的-Visibility-Feature"><span class="nav-number">7.</span> <span class="nav-text">6.设置编译器的 Visibility Feature</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-设置编译器的Strip选项"><span class="nav-number">8.</span> <span class="nav-text">7.设置编译器的Strip选项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-去除C-代码中的iostream相关代码"><span class="nav-number">9.</span> <span class="nav-text">8.去除C++代码中的iostream相关代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">10.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
 
     </div>
-    <div class="mb-search">
-  <form action="//google.com/search" method="get" accept-charset="utf-8">
-    <input type="search" name="q" results="0" placeholder="Search">
-    <input type="hidden" name="q" value="site:yoursite.com">
-  </form>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ma Yuancheng</span>
+
+  
 </div>
-<footer id="footer">
-	<h1 class="footer-blog-title">
-		<a href="/">KaelMa</a>
-	</h1>
-	<span class="copyright">
-		&copy; 2019 Ma Yuancheng<br>
-		Modify from <a href="http://sanographix.github.io/tumblr/apollo/" target="_blank">Apollo</a> theme, designed by <a href="http://www.sanographix.net/" target="_blank">SANOGRAPHIX.NET</a><br>
-		Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
-	</span>
-</footer>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
     
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    
 
-
-<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
-<script src="/fancybox/jquery.fancybox.pack.js"></script>
-
-
-<script src="/js/script.js"></script>
   </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://kaelma.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://yoursite.com/2017/03/02/减少NDK开发中SO包大小的几种方法/';
+          this.page.identifier = '2017/03/02/减少NDK开发中SO包大小的几种方法/';
+          this.page.title = '减少Android NDK开发中SO包大小的几种方法';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://kaelma.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
 </body>
 </html>
