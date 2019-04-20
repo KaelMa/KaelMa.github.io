@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>KaelMa</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="Programmer &amp; Dotaer">
+<meta property="og:type" content="website">
+<meta property="og:title" content="KaelMa">
+<meta property="og:url" content="http://yoursite.com/index.html">
+<meta property="og:site_name" content="KaelMa">
+<meta property="og:description" content="Programmer &amp; Dotaer">
+<meta property="og:locale" content="zh-CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="KaelMa">
+<meta name="twitter:description" content="Programmer &amp; Dotaer">
+  
+    <link rel="alternative" href="/atom.xml" title="KaelMa" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head></html>
+<body>
+  <div id="container">
+    <div class="mobile-nav-panel">
+	<i class="icon-reorder icon-large"></i>
+</div>
+<header id="header">
+	<h1 class="blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<nav class="nav">
+		<ul>
+			<li><a href="/">Home</a></li><li><a href="/archives">Archives</a></li>
+			<li><a id="nav-search-btn" class="nav-icon" title="Search"></a></li>
+			<li><a href="/atom.xml" id="nav-rss-link" class="nav-icon" title="RSS Feed"></a></li>
+		</ul>
+	</nav>
+	<div id="search-form-wrap">
+		<form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+	</div>
+</header>
+    <div id="main">
+      
+  
+    <article id="post-Lottie库的引入评估" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/05/20/Lottie库的引入评估/" class="article-date">
+  <time datetime="2017-05-20T04:20:02.000Z" itemprop="datePublished">2017-05-20</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 itemprop="name" class="entry-title">
+      <a class="article-title" href="/2017/05/20/Lottie库的引入评估/">Lottie库的引入评估</a>
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="一、包体大小"><a href="#一、包体大小" class="headerlink" title="一、包体大小"></a>一、包体大小</h2><p>截至到2017年5月份，Lottie最新版本支持API版本是14，引入后，增加大小大约为170KB，在包体大小上不是问题。</p>
+<h2 id="二、性能分析"><a href="#二、性能分析" class="headerlink" title="二、性能分析"></a>二、性能分析</h2><h3 id="2-1-原理"><a href="#2-1-原理" class="headerlink" title="2.1 原理"></a>2.1 原理</h3><p>从原理上来说，动画其实只有2种：</p>
+<ul>
+<li><p>逐帧动画：</p>
+<p>逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据， 可以认为逐帧动画的每一帧图像都是在其他地方预先渲染好的（PS，AE等）。</p>
+<p>比如一个30FPS(Frame Per Second)，像素大小为<code>(480*240)</code>的逐帧动画，用户需要保存30张图片的像素数据，并在1秒内将这30张图片顺序播放。比如Gif格式的动画，只是将这些像素打包在一起以减少了部分空间。</p>
+<p>从广义上来说，视频都属于这个范围。由于目前项目中gif动画使用的最广泛，这里以Gif为代表。</p>
+</li>
+<li><p>关键帧动画：</p>
+<p>关键帧动画就是不保存动画的每一帧，而通过前后两个关键帧来自动计算中间的过度画面。计算机可以根据前后两个关键帧的数据自动插值补全中间的动画。</p>
+<p>比如以位移动画来说，一个图像从a点移动到b点，在a点会有一个关键帧，在b点会有另一个关键帧，至于关键帧之间的中间帧，计算机会自动插值计算。还可以通过更改插值器等操作来修改这一过程。Lottie属于关键帧动画。</p>
+</li>
+</ul>
+<h3 id="2-2-对比"><a href="#2-2-对比" class="headerlink" title="2.2 对比"></a>2.2 对比</h3><p>从实现上来说，我们在Android开发中使用动画主要有下面几种选择：</p>
+<ul>
+<li>Gif与序列帧</li>
+<li>程序实现动画（使用属性动画接口等）</li>
+<li>Lottie</li>
+</ul>
+<p>而Lottie是基于属性动画实现的，其实现步骤大致如下：</p>
+<p><img src="/images/8C1EF245-2CEC-4EEE-AE59-296CAD1018EC.png" alt=""></p>
+<p>Lottie实际上做的工作是自动根据UE导出的关键帧数据来绘制动画，因此，就性能上来说，Lottie多了一个反序列化json文件到内存中的开销，性能必定是低于直接用程序绘制的。但也正因为如此，这个大大提高了程序员的实现动画的效率，再也不用根据UE给的动画文件手动调整动画参数，这些都交给Lottie库自动完成了。</p>
+<ul>
+<li>和Gif以及序列帧的对比：</li>
+</ul>
+<p>Gif动画或者序列帧的性能瓶颈主要在于每一帧替换纹理引起的state validation阶段，即每一帧替换纹理的CPU开销(非GPU)是比较大的。当然还有一种Gif或者序列帧的实现方式将每一帧的纹理合并在一张纹理上加载进内存，通过每一帧改变纹理坐标进行动画播放，这种方式性能上是比较好的，但是由于要一次加载所有纹理，对内存的消耗很大，只能适用于帧数不多，体积比较小的Gif或者序列帧文件。</p>
+<p>而Lottie的性能开销主要在于根据关键帧数值实时的计算出每一帧数据进行绘制，如果动画越复杂，实时计算出每一帧的开销就越大。因此，在CPU性能上，并不能断言Lottie和Gif谁更优，这取决于实际使用的动画场景。但是由于Lottie不需要加载每一帧纹理，因此，在内存上肯定是由于GIf的。</p>
+<table>
+<thead>
+<tr>
+<th>性能对比</th>
+<th>CPU开销</th>
+<th>内存开销</th>
+<th>建议使用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gif</td>
+<td>需要具体分析</td>
+<td>高</td>
+<td>非常复杂的动画</td>
+</tr>
+<tr>
+<td>Lottie</td>
+<td>需要具体分析</td>
+<td>低</td>
+<td>相对简单的动画</td>
+</tr>
+</tbody>
+</table>
+<p>实际上，Lottie并不是代替Gif的一种方案，在动画非常复杂的情况下，Lottie并不能实现。Lottie实际上做的是代替大部分的程序绘制动画，避免UE实现一次，RD再实现一次的重复劳动。</p>
+<h2 id="3、实际使用场景分析"><a href="#3、实际使用场景分析" class="headerlink" title="3、实际使用场景分析"></a>3、实际使用场景分析</h2><p><img src="/images/Example1.gif" alt=""></p>
+<p>Lottie由于关键帧的数据是通过UE导出的json文件反序列化而来（具体源码分析请参见前一篇文章）。因此，对于需要在动画中间动态改变一些信息的需求目前没法实现，比如需要在动画中间某段时间动态改变动画的颜色或者速度等，Lottie目前是不能直接使用的，需要对Lottie进行开发。</p>
+<p>另外在实际使用Lottie过程中还有一点比较局限，就是如果想对当前View中的某些部件进行动画，比如想对一个Button进行放大缩小动画，Lottie目前还不支持，需要自己实现。</p>
+<p>最后一点就是Lottie也一直在更新，现在对于AE中的某些效果还没有实现，即UE如果使用了Lottie不支持的一些属性实现动画，那么导出的json文件Lottie是无法正确显示的。但是这一点风险可控，因为这个在debug阶段一定可以发现。</p>
+<p>总结下来，Lottie目前最适合的使用场景是那些相对比较独立的动画，即动画过程中不会动态调整，比如Loading动画、引导动画这些。在动画不是非常复杂的情况下，可以代替大部分的Gif动画。Lottie这个库的主要价值在于提升实现动画的开发效率，避免了RD与UE重复实现同一个动画的工作，并且可以完美的实现UE所设计的动画效果。</p>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+</article>
+
+
+	<hr class="article-devider">
+
+
+
+  
+    <article id="post-动画原理与Lottie源码分析" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/05/20/动画原理与Lottie源码分析/" class="article-date">
+  <time datetime="2017-05-20T03:20:02.000Z" itemprop="datePublished">2017-05-20</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 itemprop="name" class="entry-title">
+      <a class="article-title" href="/2017/05/20/动画原理与Lottie源码分析/">Android动画原理与Lottie库源码分析</a>
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="基本动画原理"><a href="#基本动画原理" class="headerlink" title="基本动画原理"></a>基本动画原理</h2><h3 id="1-动画类型"><a href="#1-动画类型" class="headerlink" title="1.动画类型"></a>1.动画类型</h3><p>严格意义上来说，动画其实只有2种：</p>
+<ul>
+<li><p>逐帧动画：</p>
+<p>逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据。 </p>
+<p>比如一个30FPS(Frame Per Second)，像素大小为<code>(480*240)</code>的逐帧动画，用户需要保存30张图片的像素数据，并在1秒内将这30张图片顺序播放。</p>
+<p>其缺点主要有2点：</p>
+<ol>
+<li>所占空间较大，对于上面这个动画，需要占用<code>30*480*240*pixel</code>大小的空间。当然也可以将这些像素打包到一起减少空间，比如gif格式等。</li>
+<li>渲染时需要替换每一帧的纹理，很容易造成CPU计算负担过重(State Validation阶段)引起卡顿。</li>
+</ol>
+<p>从广义上来说，所有的视频都属于这个范畴。而在Android中，系统提供了<code>AnimationDrawable</code>这个类来实现帧动画。</p>
+</li>
+<li><p>关键帧动画：</p>
+<p>关键帧动画就是不保存动画的每一帧，而通过前后两个关键帧来自动计算中间的过度画面。计算机可以根据前后两个关键帧的数据自动插值补全中间的动画。</p>
+<p>比如以位移动画来说，一个图像从a点移动到b点，在a点会有一个关键帧，在b点会有另一个关键帧，至于关键帧之间的中间帧，计算机会自动插值计算。还可以通过更改插值器等操作来修改这一过程。</p>
+<p>对比逐帧动画，由于实现关键帧动画不需要保存每一帧图像，只需要基础纹理和关键帧的数据，所以占用的空间较少，这是它的优点。</p>
+<p>相应的，由于关键帧动画中间的数据都通过计算而来，对于比较复杂的动画，对于CPU的负担会比较重，容易造成卡顿情况，比如加入动态蒙层、实时阴影的动画，由于需要多次渲染(即最终的一幅画面要渲染好几次才能得到)，由于要遍历渲染管线好几次，CPU的负担已经远超过帧动画替换每一帧图像的开销了，这时候可以考虑用逐帧动画代替。</p>
+<p>而对于简单的动画，无论从所占空间的大小，还是运行的效率，都是关键帧动画要更好一些。</p>
+<p>在Android中，系统提供了View Animation(视图动画),(Property Animation)属性动画,Drawable Callback这些接口来实现关键帧动画。注：当然也可以通过这些接口更新每一帧的图像实现逐帧动画，这里分类时暂不考虑这种情况。</p>
+</li>
+<li><p>小结：</p>
+<p>可以认为逐帧动画的每一帧图像都是在其他地方预先渲染好的（PS，AE等），而关键帧动画的每一帧图像依赖于显示设备的实时计算，这是它们的本质区别。</p>
+</li>
+</ul>
+<h3 id="2-动画原理"><a href="#2-动画原理" class="headerlink" title="2.动画原理"></a>2.动画原理</h3><p>  动画的原理其实很简单，人的眼睛对图像有短暂的记忆效应，所以当眼睛看到多张图片连续快速的切换时，就会被认为是一段连续播放的动画了。所以要实现动画，只要保证每一帧画面有变化(无论是通过预先渲染好画面的帧动画还是通过实时计算得到每一帧画面的关键帧动画)即可。</p>
+<h4 id="1-In-Android"><a href="#1-In-Android" class="headerlink" title="(1).In Android"></a>(1).In Android</h4><p>Android的消息事件循环是在ActivityThread的Main函数中，通过Looper的Loop函数，利用epoll机制处理消息事件的。</p>
+<p>Android提供了以下几种接口可以实现动画：</p>
+<ol>
+<li><p>AnimationDrawable (逐帧动画)</p>
+</li>
+<li><p>视图动画(关键帧动画)</p>
+</li>
+<li><p>属性动画(关键帧动画)</p>
+</li>
+<li><p>Drawable.Callback接口(关键帧动画)</p>
+</li>
+<li><p>直接通过Handler向Looper的MessageQueue队列发送消息，更新下一帧图像(逐帧动画或者关键帧动画都可实现)</p>
+</li>
+</ol>
+<p>其实本质上1，2，3，4 都是Android给开发者封装的接口，底层都是通过第5来实现的。</p>
+<p>这里以视图动画与属性动画为例：</p>
+<p><img src="/images/5673A4A2-BCE6-42AB-A1F2-14F035D340B4.png" alt=""></p>
+<p>最终都是通过计算下一帧的图像数据，然后通过Handler通知消息队列，以便下次绘图时画出更新数据后的下一帧图像，这样实现动画。</p>
+<h2 id="Lottie源码解析"><a href="#Lottie源码解析" class="headerlink" title="Lottie源码解析"></a>Lottie源码解析</h2><h3 id="1-Lottie简介"><a href="#1-Lottie简介" class="headerlink" title="1.Lottie简介"></a>1.Lottie简介</h3><p>Lottie是一个同时支持Android和IOS设备的一个开源动画框架。用户只要先用<a href="http://www.adobe.com/products/aftereffects.html" target="_blank" rel="noopener">Adobe After Effects</a> 软件做出动画，再将动画文件通过<a href="https://github.com/bodymovin/bodymovin" target="_blank" rel="noopener">Bodymovin</a>导出为json文件，就可以通过Lottie来解析这些json文件实现动画了。</p>
+<p>Lottie最新版本已经支持API 14，包体大小也比较小，最新版本导出的AAR包体积为171KB。</p>
+<h3 id="2-基本用法"><a href="#2-基本用法" class="headerlink" title="2.基本用法"></a>2.基本用法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LottieAnimationView animationView = (LottieAnimationView) findViewById(R.id.animation_view);</span><br><span class="line"><span class="comment">// hello-world.json就是AE导出的动画数据，导出的图像也要放在assets下面。</span></span><br><span class="line">animationView.setAnimation(<span class="string">"hello-world.json"</span>);</span><br><span class="line">animationView.loop(<span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
+<p><code>LottieAnimation</code>是依靠<code>LottieDrawable</code>实现的，也可以直接使用<code>LottieDrawable</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LottieDrawable drawable = <span class="keyword">new</span> LottieDrawable();</span><br><span class="line">LottieComposition.Factory.fromAssetFileName(getContext(), <span class="string">"hello-world.json"</span>, (composition) -&gt; &#123;</span><br><span class="line">    drawable.setComposition(composition);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>用法就是这么简单。</p>
+<h3 id="3-实现原理"><a href="#3-实现原理" class="headerlink" title="3.实现原理"></a>3.实现原理</h3><p>开门见山，先说原理，再分析源码</p>
+<p>Bodymovin导出的json文件定义了动画的关键帧数据，Lottie用LottieComposition这个类解析json动画数据。得到关键帧数据后，通过插值器计算出下一帧的数据，更新数据，再调用invalidate刷新画面。</p>
+<p>是的，原理也是这么简单。</p>
+<h3 id="4-源码分析"><a href="#4-源码分析" class="headerlink" title="4.源码分析"></a>4.源码分析</h3><h4 id="1-解析json文件"><a href="#1-解析json文件" class="headerlink" title="(1).解析json文件"></a>(1).解析json文件</h4><p>调用动画第一步是要反序列化json代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LottieComposition.Factory.fromAssetFileName(getContext(), <span class="string">"hello-world.json"</span>, (composition) -&gt; &#123;</span><br><span class="line">    drawable.setComposition(composition);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p><code>LottieComposition</code>负责解析具体的json数据，并用这些成员变量保存到内存中，这些成员变量保存了从json解析出来动画的关键帧数据，Lottie这里支持同步和异步加载。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, List&lt;Layer&gt;&gt; precomps = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, ImageAsset&gt; images = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> LongSparseArray&lt;Layer&gt; layerMap = <span class="keyword">new</span> LongSparseArray&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> List&lt;Layer&gt; layers = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Rect bounds;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> startFrame;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> endFrame;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> frameRate;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">float</span> scale;</span><br></pre></td></tr></table></figure>
+<p>AE导出的Json文件大概是这样的，这里以位移动画的json文件举例：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"assets"</span>: [</span><br><span class="line">    &#123;</span><br><span class="line">      "id": "image_0",	 	 //图片的ID，layer获得图片的标识</span><br><span class="line">      "w": 400,				//图片的宽高</span><br><span class="line">      "h": 211,</span><br><span class="line">      "u": "images/",        //图片路径，实际未被使用</span><br><span class="line">      "p": "img_0.png" 		//图片文件名</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "layers": [				//每一层(每一个layer都要draw一次)</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="attr">"ddd"</span>: <span class="number">0</span>,</span><br><span class="line">      "ind": 0,				//layer的ID，唯一</span><br><span class="line">      "ty": 2,				//layer type：Solid，Image，Text，Shape等等</span><br><span class="line">      "nm": "weaccept.jpg",  //layer名字</span><br><span class="line">      "cl": "jpg",</span><br><span class="line">      "refId": "image_0",</span><br><span class="line">      "ks": &#123;				//关键帧</span><br><span class="line">        "o": &#123;				//透明度Opacity</span><br><span class="line">          ...				//省略了，记录了每一个关键帧的透明度,下面类似</span><br><span class="line">        &#125;,</span><br><span class="line">        "r": &#123;				//旋转Rotation</span><br><span class="line">          ...</span><br><span class="line">        &#125;,</span><br><span class="line">        "p": &#123;			    //位置Position</span><br><span class="line">          ...</span><br><span class="line">        &#125;,</span><br><span class="line">        "a": &#123;				//锚点Anchor</span><br><span class="line">          ...</span><br><span class="line">        &#125;,</span><br><span class="line">        "s": &#123;				//Scale</span><br><span class="line">          ...</span><br><span class="line">            &#125;,</span><br><span class="line">          ]</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      "ao": 0,</span><br><span class="line">      "ip": 0,				</span><br><span class="line">      "op": 61.0000024845809,</span><br><span class="line">      "st": 0,</span><br><span class="line">      "bm": 0,</span><br><span class="line">      "sr": 1</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "v": "4.5.0",</span><br><span class="line">  "ddd": 0,</span><br><span class="line">  "ip": 0,					//开始帧</span><br><span class="line">  "op": 61.0000024845809,	 //结束帧</span><br><span class="line">  "fr": 29.9700012207031,    //帧率fps</span><br><span class="line">  "w": 600,</span><br><span class="line">  "h": 600</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大致含义如上面注释，如果需要知道具体的每个字段含义，可参阅<a href="https://github.com/bodymovin/bodymovin" target="_blank" rel="noopener">Bodymovin</a>这个开源项目。</p>
+<h4 id="2-将反序列化的Json动画数据封装成关键帧对象"><a href="#2-将反序列化的Json动画数据封装成关键帧对象" class="headerlink" title="(2).将反序列化的Json动画数据封装成关键帧对象"></a>(2).将反序列化的Json动画数据封装成关键帧对象</h4><p>当Json文件被反序列化成<code>LottieComposition</code>后，会调用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">drawable.setComposition(composition);</span><br></pre></td></tr></table></figure>
+<p>这里的<code>drawable</code>是<code>LottieDrawable</code>对象，它的<code>setComposition</code>方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">setComposition</span><span class="params">(LottieComposition composition)</span> </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  buildLayersForComposition(composition);</span><br><span class="line">  ...</span><br><span class="line">  setProgress(getProgress());</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后会调用<code>LottieDrawable</code>的<code>buildLayersForComposition</code>方法，这个方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">buildLayersForComposition</span><span class="params">(LottieComposition composition)</span> </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = composition.getLayers().size() - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">    ... </span><br><span class="line">    layerView = <span class="keyword">new</span> LayerView(layer, composition, <span class="keyword">this</span>, canvasPool);</span><br><span class="line">    ...</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这里会按<code>LottileComposition</code>的<code>layers</code>创建每个layer对象。Layer对象可以理解为需要绘制的每一层，并最终调用<code>AnimatableLayer</code>的<code>addAnimation</code>方法，对于每个<code>AnimatableLayer</code>对象初始化它的成员变量animations。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AnimatableLayer</span> <span class="keyword">extends</span> <span class="title">Drawable</span> </span>&#123;</span><br><span class="line">  	...</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> List&lt;BaseKeyframeAnimation&lt;?, ?&gt;&gt; animations = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>BasekeyframeAnimation</code>就是最终保存的关键帧对象。</p>
+<h4 id="3-动画调用流程"><a href="#3-动画调用流程" class="headerlink" title="(3).动画调用流程"></a>(3).动画调用流程</h4><p><code>LottieDrawable</code>调用<code>PlayAnimation</code>，该方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">playAnimation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (layers.isEmpty()) &#123;</span><br><span class="line">    playAnimationWhenLayerAdded = <span class="keyword">true</span>;</span><br><span class="line">    reverseAnimationWhenLayerAdded = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  animator.setCurrentPlayTime((<span class="keyword">long</span>) (getProgress() * animator.getDuration()));</span><br><span class="line">  animator.start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>会调用<code>animator</code>的<code>start()</code>方法，<code>animator</code>是在<code>LottieDrawable</code>中定义的属性动画，它的<code>updatelistener</code>如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">animator.addUpdateListener(<span class="keyword">new</span> ValueAnimator.AnimatorUpdateListener() &#123;</span><br><span class="line">  <span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationUpdate</span><span class="params">(ValueAnimator animation)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (systemAnimationsAreDisabled) &#123;</span><br><span class="line">      animator.cancel();</span><br><span class="line">      setProgress(<span class="number">1f</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      setProgress((<span class="keyword">float</span>) animation.getAnimatedValue());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>开启后会调用<code>setProgress</code>方法，<code>setProgress</code>方法是<code>LottieDrawable</code>基类<code>AnimatableLayer</code>中的方法，如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.progress = progress;</span><br><span class="line">  <span class="comment">// LottieDrawable的animations对象为空，只有需要绘制的layer</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; animations.size(); i++) &#123;</span><br><span class="line">    animations.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; layers.size(); i++) &#123;</span><br><span class="line">    layers.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而<code>LottieDrawable</code>对象的<code>animations</code>成员变量为空，这里会调用<code>LottieDrawable</code>的<code>layers</code>成员变量：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> List&lt;AnimatableLayer&gt; layers = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br></pre></td></tr></table></figure>
+<p>这里的<code>layers</code>会调用<code>AnimatableLayer</code>的另一个子类<code>LayerView</code>的<code>setProgress</code>方法。</p>
+<p><img src="/images/D89B2E98-9AC0-4B3A-A492-378A5E58D29A.png" alt=""></p>
+<p>实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">  progress *= layerModel.getTimeStretch();</span><br><span class="line">  <span class="keyword">super</span>.setProgress(progress);</span><br><span class="line">  <span class="keyword">if</span> (matteLayer != <span class="keyword">null</span>) &#123;</span><br><span class="line">    matteLayer.setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里又会调用它的父类的<code>setProgress</code>方法，即<code>AnimatableLayer</code>的<code>setProgress</code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.progress = progress;</span><br><span class="line">  <span class="comment">// 每层的animations不为空，这里也是保存关键帧数据的地方</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; animations.size(); i++) &#123;</span><br><span class="line">    animations.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 每一层的的layers通常为空</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; layers.size(); i++) &#123;</span><br><span class="line">    layers.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于每层<code>layer</code>的<code>animations</code>，这个就是保存保存关键帧的地方：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> List&lt;BaseKeyframeAnimation&lt;?, ?&gt;&gt; animations = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br></pre></td></tr></table></figure>
+<p>即步骤2中所得到的关键帧。然后会调用<code>BaseKeyframeAnimation</code>具体实现类相应的<code>setProgress</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// BaseKeyframeAnimation的setProgress方法</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (progress &lt; getStartDelayProgress()) &#123;</span><br><span class="line">      progress = <span class="number">0f</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (progress &gt; getEndProgress()) &#123;</span><br><span class="line">      progress = <span class="number">1f</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (progress == <span class="keyword">this</span>.progress) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.progress = progress;</span><br><span class="line">    A value = getValue();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; listeners.size(); i++) &#123;</span><br><span class="line">      listeners.get(i).onValueChanged(value);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>这里以Color关键帧<code>ColorKeyframeAnimation</code>为例，它的<code>getValue()</code>方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> Integer <span class="title">getValue</span><span class="params">(Keyframe&lt;Integer&gt; keyframe, <span class="keyword">float</span> keyframeProgress)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> startColor = keyframe.startValue;</span><br><span class="line">  <span class="keyword">int</span> endColor = keyframe.endValue;</span><br><span class="line">  <span class="keyword">return</span> GammaEvaluator.evaluate(keyframeProgress, startColor, endColor);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里按json文件提供的关键帧数据计算得到动画在某一过程中的value，并调用其<code>onValueChanged</code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> KeyframeAnimation.AnimationListener&lt;Integer&gt; colorChangedListener =</span><br><span class="line">    <span class="keyword">new</span> KeyframeAnimation.AnimationListener&lt;Integer&gt;() &#123;</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onValueChanged</span><span class="params">(Integer value)</span> </span>&#123;</span><br><span class="line">        onColorChanged();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"><span class="comment">// 设置paint在对应progress的颜色，并通知UI重绘</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">onColorChanged</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  paint.setColor(color.getValue());</span><br><span class="line">  invalidateSelf();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至此，完整整个动画流程的调用。</p>
+<h2 id="三、总结"><a href="#三、总结" class="headerlink" title="三、总结"></a>三、总结</h2><p>Lottie这样作为一款开源动画库，解决了UE和RD对于同一份动画文件要重复实现2次的问题，可以说直接提高了开发效率，但需要注意的是，Lottie目前只支持AE的部分属性：</p>
+<ul>
+<li>Keyframe Interpolation  关键帧插值</li>
+<li>Solids  固态层</li>
+<li>Masks  蒙版</li>
+<li>Track Mattes  遮罩模式</li>
+<li>Parenting  父子关系</li>
+<li>Shape Layers  形状层</li>
+<li>Stroke (shape layer)  描边（形状层）</li>
+<li>Fill (shape layer)   填充（形状层）</li>
+<li>Trim Paths (shape layer)  修剪路径（形状层）</li>
+</ul>
+<p>如果UE在制作动画的过程中，在AE中用到了Lottie不支持的属性，那么就不能成功加载。</p>
+<p>另外从效率上来说，和GIF等帧动画相比，由于逐帧动画需要每帧都替换纹理，所以对于没有蒙版遮罩等简单的动画，Lottie的运行效率是要好于帧动画的。当然这个临界点就是CPU每帧替换纹理的State validation开销大于CPU计算得出下一帧数据的开销。</p>
+<p>另外和自己实现属性动画相比，多了一个解析JSON的开销，不过Lottie对此也提供了异步加载以及缓存机制来减少这一点。</p>
+<p>在这里简单的总结一下Lottie的优缺点。</p>
+<p><strong>优点</strong>：</p>
+<ol>
+<li>如果是没有mask和mattes等简单的动画，那么性能和内存非常好，没有bitmap创建，大部分操作都是简单的cavas绘制。</li>
+</ol>
+<p><strong>缺点</strong>：</p>
+<p>Lottie发布后在Github上的ISSUE大多已经被解决，仍然open的主要有以下几点：</p>
+<ol>
+<li>不支持硬件加速(最新的Lottie版本已经支持)<br>由于Lottie使用了一些不支持硬件加速的API，所以暂时不能支持硬件加速。这一点和开启硬件加速的动画相比性能损失较大。</li>
+<li>对于存在蒙版、遮罩等复杂的动画，性能较差</li>
+</ol>
+<blockquote>
+<p>附：Android开发中一个常见的误区就是不能在非UI线程更新UI，这句话其实是不对的，正确的说法应该是不能在没有绑定渲染API context的线程更新UI。<br>而在非UI线程更新UI是可以做到的，拿开启硬件加速后的渲染流程举例。不能在非UI线程调用渲染方法是因为底层Opengl的context绑定了UI线程，而Opengl的同一个context只能绑定一个线程，在没有绑定其context的线程调用它的方法当然会出错。如果将OpenGl的context绑定另一个线程，是可以在那个线程调用渲染方法的，当然需要处理一些线程交互问题。</p>
+</blockquote>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+</article>
+
+
+	<hr class="article-devider">
+
+
+
+  
+    <article id="post-Android虚拟机中的内存分配与OOM问题" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/04/02/Android虚拟机中的内存分配与OOM问题/" class="article-date">
+  <time datetime="2017-04-02T07:20:02.000Z" itemprop="datePublished">2017-04-02</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 itemprop="name" class="entry-title">
+      <a class="article-title" href="/2017/04/02/Android虚拟机中的内存分配与OOM问题/">Android虚拟机中的内存分配与OOM问题</a>
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h2><p>Android中每个App默认情况下是运行在一个独立进程中的, 而这个独立进程正是从Zygote孵化出来的VM进程， 也就是说, 也就是说每个Android APP在运行时会启动一个Java虚拟机。并且系统会给它分配固定的内存空间(手机厂商会根据手机的配置情况来对其进行调整)。</p>
+<h2 id="一、Android-VM的内存空间"><a href="#一、Android-VM的内存空间" class="headerlink" title="一、Android VM的内存空间"></a>一、Android VM的内存空间</h2><p>Android是一个多任务系统, 为了保证多任务的运行, Android给每个App可使用的Heap大小设定了一个限定值.这个值是系统设置的prop值,  保存在<code>System/build.prop</code>文件中. 一般国内的手机厂商都会做修改, 根据手机配置不同而不同, 可以直接打开查看与修改。</p>
+<p>其中和虚拟机内存相关的主要有以下三个：</p>
+<ol>
+<li><p><strong>dalvik.vm.heapstartsize</strong></p>
+<p>– App启动后，系统分配给它的Heap初始大小，随着App使用可增加。</p>
+</li>
+<li><p><strong>dalvik.vm.heapgrowthlimit</strong></p>
+<p>– 默认情况下, App可使用的Heap的最大值, 超过这个值就会产生OOM.</p>
+</li>
+<li><p><strong>dalvik.vm.heapsize</strong></p>
+<p>– 如果App的manifest文件中配置了largeHeap属性, 那么App可使用的Heap的最大值为此项设定值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;application</span><br><span class="line">    android:largeHeap=&quot;true&quot;&gt;</span><br><span class="line">    ...</span><br><span class="line">&lt;/application&gt;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>所以对于同一个手机，不开启<code>largeHeap</code>属性时与多进程时，每个APP的虚拟机分配的内存的上限都是<code>heapgrowthlimit</code>。</p>
+<h3 id="1-查看内存的API"><a href="#1-查看内存的API" class="headerlink" title="1.查看内存的API"></a>1.查看内存的API</h3><p>Android在<code>ActivityManager</code>类中提供了API可以运行时获取这些属性值，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//ActivityManager的getMemoryClass()获得内用正常情况下内存的大小，即heapgrowthlimit的值</span></span><br><span class="line"><span class="comment">//ActivityManager的getLargeMemoryClass()可以获得开启largeHeap最大的内存大小，即heapsize的指</span></span><br><span class="line">ActivityManager activityManager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);</span><br><span class="line">activityManager.getMemoryClass();</span><br><span class="line">activityManager.getLargeMemoryClass();</span><br></pre></td></tr></table></figure>
+<h2 id="二、Android-VM内存分配流程"><a href="#二、Android-VM内存分配流程" class="headerlink" title="二、Android VM内存分配流程"></a>二、Android VM内存分配流程</h2><p>虚拟机分配内存的具体源码可以AOSP的<a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/alloc/Heap.cpp" target="_blank" rel="noopener">Heap.cpp</a>文件中查看：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Try as hard as possible to allocate some memory.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> *<span class="title">tryMalloc</span><span class="params">(<span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> figure out better heuristics</span></span><br><span class="line"><span class="comment">//    There will be a lot of churn if someone allocates a bunch of</span></span><br><span class="line"><span class="comment">//    big objects in a row, and we hit the frag case each time.</span></span><br><span class="line"><span class="comment">//    A full GC for each.</span></span><br><span class="line"><span class="comment">//    Maybe we grow the heap in bigger leaps</span></span><br><span class="line"><span class="comment">//    Maybe we skip the GC if the size is large and we did one recently</span></span><br><span class="line"><span class="comment">//      (number of allocations ago) (watch for thread effects)</span></span><br><span class="line"><span class="comment">//    DeflateTest allocs a bunch of ~128k buffers w/in 0-5 allocs of each other</span></span><br><span class="line"><span class="comment">//      (or, at least, there are only 0-5 objects swept each time)</span></span><br><span class="line">    ptr = dvmHeapSourceAlloc(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * The allocation failed.  If the GC is running, block until it</span></span><br><span class="line"><span class="comment">     * completes and retry.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">if</span> (gDvm.gcHeap-&gt;gcRunning) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * The GC is concurrently tracing the heap.  Release the heap</span></span><br><span class="line"><span class="comment">         * lock, wait for the GC to complete, and retrying allocating.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        dvmWaitForConcurrentGcToComplete();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">/*</span></span><br><span class="line"><span class="comment">       * Try a foreground GC since a concurrent GC is not currently running.</span></span><br><span class="line"><span class="comment">       */</span></span><br><span class="line">      gcForMalloc(<span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ptr = dvmHeapSourceAlloc(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Even that didn't work;  this is an exceptional state.</span></span><br><span class="line"><span class="comment">     * Try harder, growing the heap if necessary.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    ptr = dvmHeapSourceAllocAndGrow(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">size_t</span> newHeapSize;</span><br><span class="line">        newHeapSize = dvmHeapSourceGetIdealFootprint();</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> may want to grow a little bit more so that the amount of free</span></span><br><span class="line"><span class="comment">//      space is equal to the old free space + the utilization slop for</span></span><br><span class="line"><span class="comment">//      the new allocation.</span></span><br><span class="line">        LOGI_HEAP(<span class="string">"Grow heap (frag case) to "</span></span><br><span class="line">                <span class="string">"%zu.%03zuMB for %zu-byte allocation"</span>,</span><br><span class="line">                FRACTIONAL_MB(newHeapSize), size);</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Most allocations should have succeeded by now, so the heap</span></span><br><span class="line"><span class="comment">     * is really full, really fragmented, or the requested size is</span></span><br><span class="line"><span class="comment">     * really big.  Do another GC, collecting SoftReferences this</span></span><br><span class="line"><span class="comment">     * time.  The VM spec requires that all SoftReferences have</span></span><br><span class="line"><span class="comment">     * been collected and cleared before throwing an OOME.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> wait for the finalizers from the previous GC to finish</span></span><br><span class="line">    LOGI_HEAP(<span class="string">"Forcing collection of SoftReferences for %zu-byte allocation"</span>,</span><br><span class="line">            size);</span><br><span class="line">    gcForMalloc(<span class="literal">true</span>);</span><br><span class="line">    ptr = dvmHeapSourceAllocAndGrow(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> maybe wait for finalizers and try one last time</span></span><br><span class="line">    LOGE_HEAP(<span class="string">"Out of memory on a %zd-byte allocation."</span>, size);</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> tell the HeapSource to dump its state</span></span><br><span class="line">    dvmDumpThread(dvmThreadSelf(), <span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>具体流程如下：</p>
+<ol>
+<li>尝试分配，如果成功则返回，失败则转入步骤2</li>
+<li>判断是否gc正在进行垃圾回收，如果正在进行则等待回收完成之后，尝试分配。如果成功则返回，失败则转入步骤3</li>
+<li>自己启动gc进行垃圾回收，这里gcForMalloc的参数是false。所以不会回收软引用，回收完成后尝试分配，如果成功则返回，失败则转入步骤4</li>
+<li>调用dvmHeapSourceAllocAndGrow尝试分配，这个函数会扩张堆的大小，失败转入步骤5</li>
+<li>进入回收软引用阶段，这里gcForMalloc的参数是ture，所以需要回收软引用。然后再调用dvmHeapSourceAllocAndGrow尝试分配，如果失败则抛出OOM </li>
+</ol>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>所以产生OOM时，一定是java的堆中 <code>已有的内存 + 申请的内存 &gt;= heapgrowthlimit</code>导致的，不会因为手机目前物理内存是否紧张而改变 - 当物理内存非常紧张时系统会通过LowMemory Killer杀掉一些低优先级的进程。</p>
+<p>相应的，物理内存非常充足的情况也会有OOM的情况发生。</p>
+<h2 id="三、出现OOM的建议解决方案"><a href="#三、出现OOM的建议解决方案" class="headerlink" title="三、出现OOM的建议解决方案"></a>三、出现OOM的建议解决方案</h2><p>当APP出现OOM时，建议可以从以下两个方向来处理：</p>
+<ol>
+<li><strong>排查内存泄露问题</strong></li>
+</ol>
+<ul>
+<li>排查各个功能是否内存泄露情况，可以通过Android Studio中的<a href="https://developer.android.google.cn/studio/profile/am-memory.html" target="_blank" rel="noopener">MemoryMonitor</a>功能进行分析，Memory Monitor也集成了HPROF Viewer和Allocation Tracker可以分析内存快照与内存分配追踪。另外推荐一个工具，square公司开源的<a href="https://github.com/square/leakcanary" target="_blank" rel="noopener">leakcanary</a>，非常简洁好用。</li>
+</ul>
+<ul>
+<li>排查进程初始化时就直接申请并常驻内存的对象以及其他功能里申请的static对象或者单例对象的必要性。</li>
+</ul>
+<ol start="2">
+<li><p><strong>内存优化</strong><br>按照谷歌在youtube上发布的性能优化典范之内存篇，优化各功能的内存，或可参照<a href="http://www.csdn.net/article/2015-09-18/2825737" target="_blank" rel="noopener">胡凯的总结</a>。大致有以下这些，具体请参见原文：</p>
+<ul>
+<li><p>减少对象的内存占用</p>
+<ul>
+<li>使用更加轻量的数据结构</li>
+<li>避免在Android里使用enum</li>
+<li>减少Bitmap对象的内存占用</li>
+<li>使用更小的图片</li>
+</ul>
+</li>
+<li><p>内存对象的重复利用</p>
+<ul>
+<li><p>复用系统自带的资源</p>
+</li>
+<li><p>ListView中对ConvertView的复用</p>
+</li>
+<li><p>Bitmap对象的复用</p>
+</li>
+<li><p>避免在ondraw方法里执行对象的创建</p>
+</li>
+<li><p>StringBuilder代替String</p>
+</li>
+</ul>
+</li>
+<li><p>避免对象的内存泄露</p>
+<ul>
+<li>注意Activity的泄露</li>
+<li>考虑使用Applicaiton Context代替Activity Context</li>
+<li>注意临时Bitmap对象的及时回收</li>
+<li>注意监听器的注销</li>
+<li>注意缓存容器里的对象泄露</li>
+<li>注意Webview的泄露</li>
+<li>注意Cursor对象的及时关闭</li>
+</ul>
+</li>
+<li><p>内存使用策略的优化</p>
+<ul>
+<li>谨慎使用large heap</li>
+<li>综合考虑设备的内存阈值与其他因素设计合适的缓存大小</li>
+<li>onLowMemory与onTrimMemory</li>
+<li>资源文件需要选择合适的文件夹进行存放</li>
+<li>Try catch某些大内存分配的操作</li>
+<li>谨慎使用static对象</li>
+<li>特别留意单例对象中不合理的持有</li>
+<li>珍惜Services资源</li>
+<li>优化布局层次，减少内存消耗</li>
+<li>谨慎使用“抽象”编程</li>
+<li>使用nano protobufs序列化数据</li>
+<li>谨慎使用依赖注入框架</li>
+<li>谨慎使用多进程</li>
+<li>使用ProGuard来剔除不需要的代码</li>
+<li>谨慎使用第三方libraries</li>
+<li>考虑不同的实现方式来优化内存占用</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+</article>
+
+
+	<hr class="article-devider">
+
+
+
+  
+    <article id="post-减少NDK开发中SO包大小的几种方法" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/03/02/减少NDK开发中SO包大小的几种方法/" class="article-date">
+  <time datetime="2017-03-02T07:20:02.000Z" itemprop="datePublished">2017-03-02</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 itemprop="name" class="entry-title">
+      <a class="article-title" href="/2017/03/02/减少NDK开发中SO包大小的几种方法/">减少Android NDK开发中SO包大小的几种方法</a>
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。</p>
+<p>下面整理了一些可以用于减少NDK开发中Android SO包大小的方法：</p>
+<h2 id="1-STL的使用方式"><a href="#1-STL的使用方式" class="headerlink" title="1.STL的使用方式"></a>1.STL的使用方式</h2><p>对于C++的library，引用方式有2种：</p>
+<ul>
+<li><p>静态方式(static)</p>
+</li>
+<li><p>动态方式(shared)</p>
+</li>
+</ul>
+<p>其中，静态方式在编译时会将用到的相关代码直接复制到目的文件中；而动态方式则会将相关的代码打成so文件，以便多次引用。由于编译器在编译时并不能知道所有被引用的地方，所以同时会打入了很多不相关的代码。</p>
+<p>所以，如果项目中引用library的函数较多时，用动态方式可以避免多次拷贝，节省空间。相反，则直接使用静态方式会更节省空间。</p>
+<p>NDK开发中，可以通过gradle的设置来配置：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">defaultConfig&#123;</span><br><span class="line">  externalNativeBuild&#123;</span><br><span class="line">    cmake&#123;</span><br><span class="line">      <span class="comment">// gnustl_shared 动态</span></span><br><span class="line">      arguments <span class="string">"-DANDROID_STL=gnustl_static"</span> </span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在Yoga中，项目里的stl使用较少时，安卓运行时使用static的方式，而不是shared，所以这里采用static的方式。在采取了这种方式后，包的大小从2.7M缩减到了2M。</p>
+<h2 id="2-不使用Exception和RTTI"><a href="#2-不使用Exception和RTTI" class="headerlink" title="2.不使用Exception和RTTI"></a>2.不使用Exception和RTTI</h2><p>C++的exception和RTTI功能在NDK中默认是关闭的，但是可以通过配置打开的。</p>
+<p>Android.mk:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">APP_CPPFLAGS += -fexceptions -frtti</span><br></pre></td></tr></table></figure>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_CXX_FLAGS&#125; -fexceptions -frtti"</span>)</span><br></pre></td></tr></table></figure>
+<p>Exception和RTTI会显著的增加包的体积，所以非必须的时候，没有必要使用。</p>
+<h3 id="RTTI"><a href="#RTTI" class="headerlink" title="RTTI"></a>RTTI</h3><p>通过RTTI，能够通过基类的指针或引用来检索其所指对象的实际类型，即运行时获取对象的实际类型。C++通过下面两个操作符提供RTTI。</p>
+<p>（1）typeid：返回指针或引用所指对象的实际类型。</p>
+<p>（2）dynamic_cast：将基类类型的指针或引用安全的转换为派生类型的指针或引用。</p>
+<p>在yoga中，RTTI的选项是默认打开的，而代码中其实并没有用到相关的功能,这里可以直接关闭。</p>
+<h3 id="Exception"><a href="#Exception" class="headerlink" title="Exception"></a>Exception</h3><p>使用C++的exception会增加包的大小，而目前JNI对C++的exception的支持是有bug的，比如下面这段代码就会引起程序的crash（对于低版本的android NDK）。因此要在程序中引入exception要自己实现相关逻辑，yoga就是这么做的,这个又增加了一些包体大小。对于开发者来说，exception可以帮助快速定位问题，而对于使用者并不是那么重要，这里可以去掉。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125; <span class="keyword">catch</span> (<span class="built_in">std</span>::exception&amp; e) &#123;</span><br><span class="line">    env-&gt;ThrowNew(env-&gt;FindClass(<span class="string">"java/lang/Exception"</span>), <span class="string">"Error occured"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在yoga中，在关闭RTTI和Exception功能并把exception相关的代码都去掉后，包的大小从2M缩减到的1.8M。</p>
+<h2 id="3-使用-gc-sections去除没有用到的函数"><a href="#3-使用-gc-sections去除没有用到的函数" class="headerlink" title="3.使用 gc-sections去除没有用到的函数"></a>3.使用 gc-sections去除没有用到的函数</h2><p>去除未使用的代码显然可以减少包体的大小，而在NDK的开发中，并不需要手动的来做这一点。可以开启编译器的gc-sections选项，让编译器自动的帮你做到这一点。</p>
+<p>编译器可以配置自动去除未使用的函数和变量，以下是配置方式：</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 去除未使用函数与变量</span></span><br><span class="line"><span class="keyword">set</span>(CMAKE_C_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125; -ffunction-sections -fdata-sections"</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125;"</span>)</span><br><span class="line"><span class="comment"># 设置去除未使用代码的链接flag</span></span><br><span class="line"><span class="keyword">SET_TARGET_PROPERTIES</span>(yoga PROPERTIES LINK_FLAGS <span class="string">"-Wl,--gc-sections"</span>)</span><br></pre></td></tr></table></figure>
+<p>Android.mk:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LOCAL_CPPFLAGS += -ffunction-sections -fdata-sections</span><br><span class="line">LOCAL_CFLAGS += -ffunction-sections -fdata-sections </span><br><span class="line">LOCAL_LDFLAGS += -Wl,--gc-sections</span><br></pre></td></tr></table></figure>
+<h2 id="4-去除冗余代码"><a href="#4-去除冗余代码" class="headerlink" title="4.去除冗余代码"></a>4.去除冗余代码</h2><p>在NDK中，链接器还有一个选项 “-icf = safe”，可以用于去除代码中的冗余代码。但是要注意的是，这个选项也有可能去除定义好的inline函数，这里必须要做好权衡。</p>
+<p>下面是配置方式：</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET_TARGET_PROPERTIES</span>(yoga PROPERTIES LINK_FLAGS <span class="string">"-Wl,--gc-sections,--icf=safe"</span>)</span><br></pre></td></tr></table></figure>
+<p>Android.mk:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LOCAL_LDFLAGS += -Wl,--gc-sections,--icf=safe</span><br></pre></td></tr></table></figure>
+<h2 id="5-设置编译器的优化flag"><a href="#5-设置编译器的优化flag" class="headerlink" title="5.设置编译器的优化flag"></a>5.设置编译器的优化flag</h2><p>编译器有个优化flag可以设置，分别是-Os（体积最小），-O3(性能最优)等。这里将编译器的优化flag设置为-Os，以便减少体积。</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_C_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125; -Os"</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125;"</span>)</span><br></pre></td></tr></table></figure>
+<p>Android.mk</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LOCAL_CPPFLAGS += -Os</span><br><span class="line">LOCAL_CFLAGS += -Os</span><br></pre></td></tr></table></figure>
+<p>在采用了3，4，5这几种方式后，Yoga包的大小从1.8M减少到了1.7M。这里减少的比较少是因为Yoga在这方面已经做的挺好了，其他的库可能会更有效。</p>
+<h2 id="6-设置编译器的-Visibility-Feature"><a href="#6-设置编译器的-Visibility-Feature" class="headerlink" title="6.设置编译器的 Visibility Feature"></a>6.设置编译器的 Visibility Feature</h2><p>还有个减少包体大小的方法，就是设置编译器的visibility feature。</p>
+<p>Visibility Feature就是用来控制在哪些函数可以在符号表中被输入，由于C++并不是完全面向对象的，非类的方法并没有public这种修饰符，因此，要用Visibility Feature来控制哪些函数可以被外部调用。而JNI提供了一个宏-JNIEXPORT来控制这点。所以只要对函数加上这个宏，像这样：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JNIEXPORT就是控制可见的宏</span></span><br><span class="line"><span class="comment">// JNICALL在NDK这里没有什么意义，只是个标识宏</span></span><br><span class="line"><span class="function">JNIEXPORT <span class="keyword">void</span> JNICALL <span class="title">Java_ClassName_MethodName</span><span class="params">(JNIEnv *env, jobject obj, jstring javaString)</span></span></span><br></pre></td></tr></table></figure>
+<p>然后在编译器的FLAGS选项开启 -fvisibility = hidden 就可以。这样，不仅可以控制函数的可见性，并且可以减少包体的大小。</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_C_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125; -fvisibility=hidden"</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125;"</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="7-设置编译器的Strip选项"><a href="#7-设置编译器的Strip选项" class="headerlink" title="7.设置编译器的Strip选项"></a>7.设置编译器的Strip选项</h2><p>我在把Yoga库编译成AAR包的过程中发现，它的体积明显会大于最后打包进APK的大小，这点非常不合理，但是无法找到原因。</p>
+<p>最终搜索到这是谷歌NDK的一个bug，在打AAR包的过程中，无论是debug版本还是release版本，NDK toolchain不会自动的把方便调试的C++ 符号表(Symbol Table)中数据删除，而只会在打APK包的时候进行这一操作。这就导致了打成的AAR包中的SO体积明显偏大。</p>
+<p>详细描述可以参见这个ISSUE: <a href="https://code.google.com/p/android/issues/detail?id=222831" target="_blank" rel="noopener">https://code.google.com/p/android/issues/detail?id=222831</a></p>
+<p>找到原因后这个问题就很好解决了，可以手动的在链接选项中加入 strip参数，配置如下所示：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET_TARGET_PROPERTIES</span>(yoga PROPERTIES LINK_FLAGS <span class="string">"-Wl,--gc-sections,--icf=safe,-s"</span>)</span><br></pre></td></tr></table></figure>
+<p>在强制进行strip操作后，将Yoga包的体积从1.7M成功减少到了282KB。</p>
+<h2 id="8-去除C-代码中的iostream相关代码"><a href="#8-去除C-代码中的iostream相关代码" class="headerlink" title="8.去除C++代码中的iostream相关代码"></a>8.去除C++代码中的iostream相关代码</h2><p>使用STL中的iostream相关库会明显的增加包的体积，而NDK本身是有预编译库(android/log.h)可以代替这一功能的，在Yoga这里，用log的函数代替了iostream中的所有函数，如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//代替所有的iostream库里函数</span></span><br><span class="line"><span class="comment">//cout &lt;&lt; obj-&gt;toString() &lt;&lt; endl;</span></span><br><span class="line">__android_log_print(ANDROID_LOG_VERBOSE,<span class="string">"Yoga"</span>,<span class="string">"Node is: %s"</span>,obj-&gt;toString().c_str());</span><br></pre></td></tr></table></figure>
+<p>在做完代替之后，yoga包的体积从282KB减少到了218KB。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在做完这一系列工作后，最终成功的压缩了Yoga包的体积，从几M到最后输出一个218KB的AAR包提供使用。以上几种方法并不局限于Yoga包的缩减。在NDK开发中，要缩减SO包的体积都可以按照这几种方式尝试一下。</p>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ndk/">ndk</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+</article>
+
+
+	<hr class="article-devider">
+
+
+
+  
+  
+
+    </div>
+    <div class="mb-search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+<footer id="footer">
+	<h1 class="footer-blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<span class="copyright">
+		&copy; 2019 Ma Yuancheng<br>
+		Modify from <a href="http://sanographix.github.io/tumblr/apollo/" target="_blank">Apollo</a> theme, designed by <a href="http://www.sanographix.net/" target="_blank">SANOGRAPHIX.NET</a><br>
+		Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	</span>
+</footer>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+  </div>
+</body>
+</html>

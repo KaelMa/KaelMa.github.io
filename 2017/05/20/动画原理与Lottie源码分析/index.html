@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>Android动画原理与Lottie库源码分析 | KaelMa</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="基本动画原理1.动画类型严格意义上来说，动画其实只有2种：  逐帧动画： 逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据。  比如一个30FPS(Frame Per Second)，像素大小为(480*240)的逐帧动画，用户需要保存30张图片的像素数据，并在1秒内将这30张图片顺序播放。 其缺点主要有2点：  所占空间较大，对于上">
+<meta name="keywords" content="android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android动画原理与Lottie库源码分析">
+<meta property="og:url" content="http://yoursite.com/2017/05/20/动画原理与Lottie源码分析/index.html">
+<meta property="og:site_name" content="KaelMa">
+<meta property="og:description" content="基本动画原理1.动画类型严格意义上来说，动画其实只有2种：  逐帧动画： 逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据。  比如一个30FPS(Frame Per Second)，像素大小为(480*240)的逐帧动画，用户需要保存30张图片的像素数据，并在1秒内将这30张图片顺序播放。 其缺点主要有2点：  所占空间较大，对于上">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/images/5673A4A2-BCE6-42AB-A1F2-14F035D340B4.png">
+<meta property="og:image" content="http://yoursite.com/images/D89B2E98-9AC0-4B3A-A492-378A5E58D29A.png">
+<meta property="og:updated_time" content="2017-09-09T07:58:52.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android动画原理与Lottie库源码分析">
+<meta name="twitter:description" content="基本动画原理1.动画类型严格意义上来说，动画其实只有2种：  逐帧动画： 逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据。  比如一个30FPS(Frame Per Second)，像素大小为(480*240)的逐帧动画，用户需要保存30张图片的像素数据，并在1秒内将这30张图片顺序播放。 其缺点主要有2点：  所占空间较大，对于上">
+<meta name="twitter:image" content="http://yoursite.com/images/5673A4A2-BCE6-42AB-A1F2-14F035D340B4.png">
+  
+    <link rel="alternative" href="/atom.xml" title="KaelMa" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head></html>
+<body>
+  <div id="container">
+    <div class="mobile-nav-panel">
+	<i class="icon-reorder icon-large"></i>
+</div>
+<header id="header">
+	<h1 class="blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<nav class="nav">
+		<ul>
+			<li><a href="/">Home</a></li><li><a href="/archives">Archives</a></li>
+			<li><a id="nav-search-btn" class="nav-icon" title="Search"></a></li>
+			<li><a href="/atom.xml" id="nav-rss-link" class="nav-icon" title="RSS Feed"></a></li>
+		</ul>
+	</nav>
+	<div id="search-form-wrap">
+		<form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+	</div>
+</header>
+    <div id="main">
+      <article id="post-动画原理与Lottie源码分析" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/05/20/动画原理与Lottie源码分析/" class="article-date">
+  <time datetime="2017-05-20T03:20:02.000Z" itemprop="datePublished">2017-05-20</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 class="article-title entry-title" itemprop="name">
+      Android动画原理与Lottie库源码分析
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="基本动画原理"><a href="#基本动画原理" class="headerlink" title="基本动画原理"></a>基本动画原理</h2><h3 id="1-动画类型"><a href="#1-动画类型" class="headerlink" title="1.动画类型"></a>1.动画类型</h3><p>严格意义上来说，动画其实只有2种：</p>
+<ul>
+<li><p>逐帧动画：</p>
+<p>逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据。 </p>
+<p>比如一个30FPS(Frame Per Second)，像素大小为<code>(480*240)</code>的逐帧动画，用户需要保存30张图片的像素数据，并在1秒内将这30张图片顺序播放。</p>
+<p>其缺点主要有2点：</p>
+<ol>
+<li>所占空间较大，对于上面这个动画，需要占用<code>30*480*240*pixel</code>大小的空间。当然也可以将这些像素打包到一起减少空间，比如gif格式等。</li>
+<li>渲染时需要替换每一帧的纹理，很容易造成CPU计算负担过重(State Validation阶段)引起卡顿。</li>
+</ol>
+<p>从广义上来说，所有的视频都属于这个范畴。而在Android中，系统提供了<code>AnimationDrawable</code>这个类来实现帧动画。</p>
+</li>
+<li><p>关键帧动画：</p>
+<p>关键帧动画就是不保存动画的每一帧，而通过前后两个关键帧来自动计算中间的过度画面。计算机可以根据前后两个关键帧的数据自动插值补全中间的动画。</p>
+<p>比如以位移动画来说，一个图像从a点移动到b点，在a点会有一个关键帧，在b点会有另一个关键帧，至于关键帧之间的中间帧，计算机会自动插值计算。还可以通过更改插值器等操作来修改这一过程。</p>
+<p>对比逐帧动画，由于实现关键帧动画不需要保存每一帧图像，只需要基础纹理和关键帧的数据，所以占用的空间较少，这是它的优点。</p>
+<p>相应的，由于关键帧动画中间的数据都通过计算而来，对于比较复杂的动画，对于CPU的负担会比较重，容易造成卡顿情况，比如加入动态蒙层、实时阴影的动画，由于需要多次渲染(即最终的一幅画面要渲染好几次才能得到)，由于要遍历渲染管线好几次，CPU的负担已经远超过帧动画替换每一帧图像的开销了，这时候可以考虑用逐帧动画代替。</p>
+<p>而对于简单的动画，无论从所占空间的大小，还是运行的效率，都是关键帧动画要更好一些。</p>
+<p>在Android中，系统提供了View Animation(视图动画),(Property Animation)属性动画,Drawable Callback这些接口来实现关键帧动画。注：当然也可以通过这些接口更新每一帧的图像实现逐帧动画，这里分类时暂不考虑这种情况。</p>
+</li>
+<li><p>小结：</p>
+<p>可以认为逐帧动画的每一帧图像都是在其他地方预先渲染好的（PS，AE等），而关键帧动画的每一帧图像依赖于显示设备的实时计算，这是它们的本质区别。</p>
+</li>
+</ul>
+<h3 id="2-动画原理"><a href="#2-动画原理" class="headerlink" title="2.动画原理"></a>2.动画原理</h3><p>  动画的原理其实很简单，人的眼睛对图像有短暂的记忆效应，所以当眼睛看到多张图片连续快速的切换时，就会被认为是一段连续播放的动画了。所以要实现动画，只要保证每一帧画面有变化(无论是通过预先渲染好画面的帧动画还是通过实时计算得到每一帧画面的关键帧动画)即可。</p>
+<h4 id="1-In-Android"><a href="#1-In-Android" class="headerlink" title="(1).In Android"></a>(1).In Android</h4><p>Android的消息事件循环是在ActivityThread的Main函数中，通过Looper的Loop函数，利用epoll机制处理消息事件的。</p>
+<p>Android提供了以下几种接口可以实现动画：</p>
+<ol>
+<li><p>AnimationDrawable (逐帧动画)</p>
+</li>
+<li><p>视图动画(关键帧动画)</p>
+</li>
+<li><p>属性动画(关键帧动画)</p>
+</li>
+<li><p>Drawable.Callback接口(关键帧动画)</p>
+</li>
+<li><p>直接通过Handler向Looper的MessageQueue队列发送消息，更新下一帧图像(逐帧动画或者关键帧动画都可实现)</p>
+</li>
+</ol>
+<p>其实本质上1，2，3，4 都是Android给开发者封装的接口，底层都是通过第5来实现的。</p>
+<p>这里以视图动画与属性动画为例：</p>
+<p><img src="/images/5673A4A2-BCE6-42AB-A1F2-14F035D340B4.png" alt=""></p>
+<p>最终都是通过计算下一帧的图像数据，然后通过Handler通知消息队列，以便下次绘图时画出更新数据后的下一帧图像，这样实现动画。</p>
+<h2 id="Lottie源码解析"><a href="#Lottie源码解析" class="headerlink" title="Lottie源码解析"></a>Lottie源码解析</h2><h3 id="1-Lottie简介"><a href="#1-Lottie简介" class="headerlink" title="1.Lottie简介"></a>1.Lottie简介</h3><p>Lottie是一个同时支持Android和IOS设备的一个开源动画框架。用户只要先用<a href="http://www.adobe.com/products/aftereffects.html" target="_blank" rel="noopener">Adobe After Effects</a> 软件做出动画，再将动画文件通过<a href="https://github.com/bodymovin/bodymovin" target="_blank" rel="noopener">Bodymovin</a>导出为json文件，就可以通过Lottie来解析这些json文件实现动画了。</p>
+<p>Lottie最新版本已经支持API 14，包体大小也比较小，最新版本导出的AAR包体积为171KB。</p>
+<h3 id="2-基本用法"><a href="#2-基本用法" class="headerlink" title="2.基本用法"></a>2.基本用法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LottieAnimationView animationView = (LottieAnimationView) findViewById(R.id.animation_view);</span><br><span class="line"><span class="comment">// hello-world.json就是AE导出的动画数据，导出的图像也要放在assets下面。</span></span><br><span class="line">animationView.setAnimation(<span class="string">"hello-world.json"</span>);</span><br><span class="line">animationView.loop(<span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
+<p><code>LottieAnimation</code>是依靠<code>LottieDrawable</code>实现的，也可以直接使用<code>LottieDrawable</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LottieDrawable drawable = <span class="keyword">new</span> LottieDrawable();</span><br><span class="line">LottieComposition.Factory.fromAssetFileName(getContext(), <span class="string">"hello-world.json"</span>, (composition) -&gt; &#123;</span><br><span class="line">    drawable.setComposition(composition);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>用法就是这么简单。</p>
+<h3 id="3-实现原理"><a href="#3-实现原理" class="headerlink" title="3.实现原理"></a>3.实现原理</h3><p>开门见山，先说原理，再分析源码</p>
+<p>Bodymovin导出的json文件定义了动画的关键帧数据，Lottie用LottieComposition这个类解析json动画数据。得到关键帧数据后，通过插值器计算出下一帧的数据，更新数据，再调用invalidate刷新画面。</p>
+<p>是的，原理也是这么简单。</p>
+<h3 id="4-源码分析"><a href="#4-源码分析" class="headerlink" title="4.源码分析"></a>4.源码分析</h3><h4 id="1-解析json文件"><a href="#1-解析json文件" class="headerlink" title="(1).解析json文件"></a>(1).解析json文件</h4><p>调用动画第一步是要反序列化json代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LottieComposition.Factory.fromAssetFileName(getContext(), <span class="string">"hello-world.json"</span>, (composition) -&gt; &#123;</span><br><span class="line">    drawable.setComposition(composition);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p><code>LottieComposition</code>负责解析具体的json数据，并用这些成员变量保存到内存中，这些成员变量保存了从json解析出来动画的关键帧数据，Lottie这里支持同步和异步加载。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, List&lt;Layer&gt;&gt; precomps = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, ImageAsset&gt; images = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> LongSparseArray&lt;Layer&gt; layerMap = <span class="keyword">new</span> LongSparseArray&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> List&lt;Layer&gt; layers = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Rect bounds;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> startFrame;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> endFrame;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> frameRate;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">float</span> scale;</span><br></pre></td></tr></table></figure>
+<p>AE导出的Json文件大概是这样的，这里以位移动画的json文件举例：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"assets"</span>: [</span><br><span class="line">    &#123;</span><br><span class="line">      "id": "image_0",	 	 //图片的ID，layer获得图片的标识</span><br><span class="line">      "w": 400,				//图片的宽高</span><br><span class="line">      "h": 211,</span><br><span class="line">      "u": "images/",        //图片路径，实际未被使用</span><br><span class="line">      "p": "img_0.png" 		//图片文件名</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "layers": [				//每一层(每一个layer都要draw一次)</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="attr">"ddd"</span>: <span class="number">0</span>,</span><br><span class="line">      "ind": 0,				//layer的ID，唯一</span><br><span class="line">      "ty": 2,				//layer type：Solid，Image，Text，Shape等等</span><br><span class="line">      "nm": "weaccept.jpg",  //layer名字</span><br><span class="line">      "cl": "jpg",</span><br><span class="line">      "refId": "image_0",</span><br><span class="line">      "ks": &#123;				//关键帧</span><br><span class="line">        "o": &#123;				//透明度Opacity</span><br><span class="line">          ...				//省略了，记录了每一个关键帧的透明度,下面类似</span><br><span class="line">        &#125;,</span><br><span class="line">        "r": &#123;				//旋转Rotation</span><br><span class="line">          ...</span><br><span class="line">        &#125;,</span><br><span class="line">        "p": &#123;			    //位置Position</span><br><span class="line">          ...</span><br><span class="line">        &#125;,</span><br><span class="line">        "a": &#123;				//锚点Anchor</span><br><span class="line">          ...</span><br><span class="line">        &#125;,</span><br><span class="line">        "s": &#123;				//Scale</span><br><span class="line">          ...</span><br><span class="line">            &#125;,</span><br><span class="line">          ]</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      "ao": 0,</span><br><span class="line">      "ip": 0,				</span><br><span class="line">      "op": 61.0000024845809,</span><br><span class="line">      "st": 0,</span><br><span class="line">      "bm": 0,</span><br><span class="line">      "sr": 1</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "v": "4.5.0",</span><br><span class="line">  "ddd": 0,</span><br><span class="line">  "ip": 0,					//开始帧</span><br><span class="line">  "op": 61.0000024845809,	 //结束帧</span><br><span class="line">  "fr": 29.9700012207031,    //帧率fps</span><br><span class="line">  "w": 600,</span><br><span class="line">  "h": 600</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大致含义如上面注释，如果需要知道具体的每个字段含义，可参阅<a href="https://github.com/bodymovin/bodymovin" target="_blank" rel="noopener">Bodymovin</a>这个开源项目。</p>
+<h4 id="2-将反序列化的Json动画数据封装成关键帧对象"><a href="#2-将反序列化的Json动画数据封装成关键帧对象" class="headerlink" title="(2).将反序列化的Json动画数据封装成关键帧对象"></a>(2).将反序列化的Json动画数据封装成关键帧对象</h4><p>当Json文件被反序列化成<code>LottieComposition</code>后，会调用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">drawable.setComposition(composition);</span><br></pre></td></tr></table></figure>
+<p>这里的<code>drawable</code>是<code>LottieDrawable</code>对象，它的<code>setComposition</code>方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">setComposition</span><span class="params">(LottieComposition composition)</span> </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  buildLayersForComposition(composition);</span><br><span class="line">  ...</span><br><span class="line">  setProgress(getProgress());</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后会调用<code>LottieDrawable</code>的<code>buildLayersForComposition</code>方法，这个方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">buildLayersForComposition</span><span class="params">(LottieComposition composition)</span> </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = composition.getLayers().size() - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">    ... </span><br><span class="line">    layerView = <span class="keyword">new</span> LayerView(layer, composition, <span class="keyword">this</span>, canvasPool);</span><br><span class="line">    ...</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这里会按<code>LottileComposition</code>的<code>layers</code>创建每个layer对象。Layer对象可以理解为需要绘制的每一层，并最终调用<code>AnimatableLayer</code>的<code>addAnimation</code>方法，对于每个<code>AnimatableLayer</code>对象初始化它的成员变量animations。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AnimatableLayer</span> <span class="keyword">extends</span> <span class="title">Drawable</span> </span>&#123;</span><br><span class="line">  	...</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> List&lt;BaseKeyframeAnimation&lt;?, ?&gt;&gt; animations = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">  	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>BasekeyframeAnimation</code>就是最终保存的关键帧对象。</p>
+<h4 id="3-动画调用流程"><a href="#3-动画调用流程" class="headerlink" title="(3).动画调用流程"></a>(3).动画调用流程</h4><p><code>LottieDrawable</code>调用<code>PlayAnimation</code>，该方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">playAnimation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (layers.isEmpty()) &#123;</span><br><span class="line">    playAnimationWhenLayerAdded = <span class="keyword">true</span>;</span><br><span class="line">    reverseAnimationWhenLayerAdded = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  animator.setCurrentPlayTime((<span class="keyword">long</span>) (getProgress() * animator.getDuration()));</span><br><span class="line">  animator.start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>会调用<code>animator</code>的<code>start()</code>方法，<code>animator</code>是在<code>LottieDrawable</code>中定义的属性动画，它的<code>updatelistener</code>如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">animator.addUpdateListener(<span class="keyword">new</span> ValueAnimator.AnimatorUpdateListener() &#123;</span><br><span class="line">  <span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationUpdate</span><span class="params">(ValueAnimator animation)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (systemAnimationsAreDisabled) &#123;</span><br><span class="line">      animator.cancel();</span><br><span class="line">      setProgress(<span class="number">1f</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      setProgress((<span class="keyword">float</span>) animation.getAnimatedValue());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>开启后会调用<code>setProgress</code>方法，<code>setProgress</code>方法是<code>LottieDrawable</code>基类<code>AnimatableLayer</code>中的方法，如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.progress = progress;</span><br><span class="line">  <span class="comment">// LottieDrawable的animations对象为空，只有需要绘制的layer</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; animations.size(); i++) &#123;</span><br><span class="line">    animations.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; layers.size(); i++) &#123;</span><br><span class="line">    layers.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而<code>LottieDrawable</code>对象的<code>animations</code>成员变量为空，这里会调用<code>LottieDrawable</code>的<code>layers</code>成员变量：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> List&lt;AnimatableLayer&gt; layers = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br></pre></td></tr></table></figure>
+<p>这里的<code>layers</code>会调用<code>AnimatableLayer</code>的另一个子类<code>LayerView</code>的<code>setProgress</code>方法。</p>
+<p><img src="/images/D89B2E98-9AC0-4B3A-A492-378A5E58D29A.png" alt=""></p>
+<p>实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">  progress *= layerModel.getTimeStretch();</span><br><span class="line">  <span class="keyword">super</span>.setProgress(progress);</span><br><span class="line">  <span class="keyword">if</span> (matteLayer != <span class="keyword">null</span>) &#123;</span><br><span class="line">    matteLayer.setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里又会调用它的父类的<code>setProgress</code>方法，即<code>AnimatableLayer</code>的<code>setProgress</code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.progress = progress;</span><br><span class="line">  <span class="comment">// 每层的animations不为空，这里也是保存关键帧数据的地方</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; animations.size(); i++) &#123;</span><br><span class="line">    animations.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 每一层的的layers通常为空</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; layers.size(); i++) &#123;</span><br><span class="line">    layers.get(i).setProgress(progress);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于每层<code>layer</code>的<code>animations</code>，这个就是保存保存关键帧的地方：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> List&lt;BaseKeyframeAnimation&lt;?, ?&gt;&gt; animations = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br></pre></td></tr></table></figure>
+<p>即步骤2中所得到的关键帧。然后会调用<code>BaseKeyframeAnimation</code>具体实现类相应的<code>setProgress</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// BaseKeyframeAnimation的setProgress方法</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">setProgress</span><span class="params">(@FloatRange(from = <span class="number">0</span>f, to = <span class="number">1</span>f)</span> <span class="keyword">float</span> progress) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (progress &lt; getStartDelayProgress()) &#123;</span><br><span class="line">      progress = <span class="number">0f</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (progress &gt; getEndProgress()) &#123;</span><br><span class="line">      progress = <span class="number">1f</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (progress == <span class="keyword">this</span>.progress) &#123;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.progress = progress;</span><br><span class="line">    A value = getValue();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; listeners.size(); i++) &#123;</span><br><span class="line">      listeners.get(i).onValueChanged(value);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>这里以Color关键帧<code>ColorKeyframeAnimation</code>为例，它的<code>getValue()</code>方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> Integer <span class="title">getValue</span><span class="params">(Keyframe&lt;Integer&gt; keyframe, <span class="keyword">float</span> keyframeProgress)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> startColor = keyframe.startValue;</span><br><span class="line">  <span class="keyword">int</span> endColor = keyframe.endValue;</span><br><span class="line">  <span class="keyword">return</span> GammaEvaluator.evaluate(keyframeProgress, startColor, endColor);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里按json文件提供的关键帧数据计算得到动画在某一过程中的value，并调用其<code>onValueChanged</code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> KeyframeAnimation.AnimationListener&lt;Integer&gt; colorChangedListener =</span><br><span class="line">    <span class="keyword">new</span> KeyframeAnimation.AnimationListener&lt;Integer&gt;() &#123;</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onValueChanged</span><span class="params">(Integer value)</span> </span>&#123;</span><br><span class="line">        onColorChanged();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"><span class="comment">// 设置paint在对应progress的颜色，并通知UI重绘</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">onColorChanged</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  paint.setColor(color.getValue());</span><br><span class="line">  invalidateSelf();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至此，完整整个动画流程的调用。</p>
+<h2 id="三、总结"><a href="#三、总结" class="headerlink" title="三、总结"></a>三、总结</h2><p>Lottie这样作为一款开源动画库，解决了UE和RD对于同一份动画文件要重复实现2次的问题，可以说直接提高了开发效率，但需要注意的是，Lottie目前只支持AE的部分属性：</p>
+<ul>
+<li>Keyframe Interpolation  关键帧插值</li>
+<li>Solids  固态层</li>
+<li>Masks  蒙版</li>
+<li>Track Mattes  遮罩模式</li>
+<li>Parenting  父子关系</li>
+<li>Shape Layers  形状层</li>
+<li>Stroke (shape layer)  描边（形状层）</li>
+<li>Fill (shape layer)   填充（形状层）</li>
+<li>Trim Paths (shape layer)  修剪路径（形状层）</li>
+</ul>
+<p>如果UE在制作动画的过程中，在AE中用到了Lottie不支持的属性，那么就不能成功加载。</p>
+<p>另外从效率上来说，和GIF等帧动画相比，由于逐帧动画需要每帧都替换纹理，所以对于没有蒙版遮罩等简单的动画，Lottie的运行效率是要好于帧动画的。当然这个临界点就是CPU每帧替换纹理的State validation开销大于CPU计算得出下一帧数据的开销。</p>
+<p>另外和自己实现属性动画相比，多了一个解析JSON的开销，不过Lottie对此也提供了异步加载以及缓存机制来减少这一点。</p>
+<p>在这里简单的总结一下Lottie的优缺点。</p>
+<p><strong>优点</strong>：</p>
+<ol>
+<li>如果是没有mask和mattes等简单的动画，那么性能和内存非常好，没有bitmap创建，大部分操作都是简单的cavas绘制。</li>
+</ol>
+<p><strong>缺点</strong>：</p>
+<p>Lottie发布后在Github上的ISSUE大多已经被解决，仍然open的主要有以下几点：</p>
+<ol>
+<li>不支持硬件加速(最新的Lottie版本已经支持)<br>由于Lottie使用了一些不支持硬件加速的API，所以暂时不能支持硬件加速。这一点和开启硬件加速的动画相比性能损失较大。</li>
+<li>对于存在蒙版、遮罩等复杂的动画，性能较差</li>
+</ol>
+<blockquote>
+<p>附：Android开发中一个常见的误区就是不能在非UI线程更新UI，这句话其实是不对的，正确的说法应该是不能在没有绑定渲染API context的线程更新UI。<br>而在非UI线程更新UI是可以做到的，拿开启硬件加速后的渲染流程举例。不能在非UI线程调用渲染方法是因为底层Opengl的context绑定了UI线程，而Opengl的同一个context只能绑定一个线程，在没有绑定其context的线程调用它的方法当然会出错。如果将OpenGl的context绑定另一个线程，是可以在那个线程调用渲染方法的，当然需要处理一些线程交互问题。</p>
+</blockquote>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+    
+<nav id="article-nav">
+  
+    <a href="/2017/05/20/Lottie库的引入评估/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Lottie库的引入评估
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/04/02/Android虚拟机中的内存分配与OOM问题/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Android虚拟机中的内存分配与OOM问题
+        
+      </div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+
+
+    </div>
+    <div class="mb-search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+<footer id="footer">
+	<h1 class="footer-blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<span class="copyright">
+		&copy; 2019 Ma Yuancheng<br>
+		Modify from <a href="http://sanographix.github.io/tumblr/apollo/" target="_blank">Apollo</a> theme, designed by <a href="http://www.sanographix.net/" target="_blank">SANOGRAPHIX.NET</a><br>
+		Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	</span>
+</footer>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+  </div>
+</body>
+</html>

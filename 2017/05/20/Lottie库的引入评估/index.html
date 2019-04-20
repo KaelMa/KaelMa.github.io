@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>Lottie库的引入评估 | KaelMa</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="一、包体大小截至到2017年5月份，Lottie最新版本支持API版本是14，引入后，增加大小大约为170KB，在包体大小上不是问题。 二、性能分析2.1 原理从原理上来说，动画其实只有2种：  逐帧动画： 逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据， 可以认为逐帧动画的每一帧图像都是在其他地方预先渲染好的（PS，AE等）。 比">
+<meta name="keywords" content="android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Lottie库的引入评估">
+<meta property="og:url" content="http://yoursite.com/2017/05/20/Lottie库的引入评估/index.html">
+<meta property="og:site_name" content="KaelMa">
+<meta property="og:description" content="一、包体大小截至到2017年5月份，Lottie最新版本支持API版本是14，引入后，增加大小大约为170KB，在包体大小上不是问题。 二、性能分析2.1 原理从原理上来说，动画其实只有2种：  逐帧动画： 逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据， 可以认为逐帧动画的每一帧图像都是在其他地方预先渲染好的（PS，AE等）。 比">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://yoursite.com/images/8C1EF245-2CEC-4EEE-AE59-296CAD1018EC.png">
+<meta property="og:image" content="http://yoursite.com/images/Example1.gif">
+<meta property="og:updated_time" content="2017-09-09T07:58:52.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Lottie库的引入评估">
+<meta name="twitter:description" content="一、包体大小截至到2017年5月份，Lottie最新版本支持API版本是14，引入后，增加大小大约为170KB，在包体大小上不是问题。 二、性能分析2.1 原理从原理上来说，动画其实只有2种：  逐帧动画： 逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据， 可以认为逐帧动画的每一帧图像都是在其他地方预先渲染好的（PS，AE等）。 比">
+<meta name="twitter:image" content="http://yoursite.com/images/8C1EF245-2CEC-4EEE-AE59-296CAD1018EC.png">
+  
+    <link rel="alternative" href="/atom.xml" title="KaelMa" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head></html>
+<body>
+  <div id="container">
+    <div class="mobile-nav-panel">
+	<i class="icon-reorder icon-large"></i>
+</div>
+<header id="header">
+	<h1 class="blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<nav class="nav">
+		<ul>
+			<li><a href="/">Home</a></li><li><a href="/archives">Archives</a></li>
+			<li><a id="nav-search-btn" class="nav-icon" title="Search"></a></li>
+			<li><a href="/atom.xml" id="nav-rss-link" class="nav-icon" title="RSS Feed"></a></li>
+		</ul>
+	</nav>
+	<div id="search-form-wrap">
+		<form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+	</div>
+</header>
+    <div id="main">
+      <article id="post-Lottie库的引入评估" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/05/20/Lottie库的引入评估/" class="article-date">
+  <time datetime="2017-05-20T04:20:02.000Z" itemprop="datePublished">2017-05-20</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 class="article-title entry-title" itemprop="name">
+      Lottie库的引入评估
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="一、包体大小"><a href="#一、包体大小" class="headerlink" title="一、包体大小"></a>一、包体大小</h2><p>截至到2017年5月份，Lottie最新版本支持API版本是14，引入后，增加大小大约为170KB，在包体大小上不是问题。</p>
+<h2 id="二、性能分析"><a href="#二、性能分析" class="headerlink" title="二、性能分析"></a>二、性能分析</h2><h3 id="2-1-原理"><a href="#2-1-原理" class="headerlink" title="2.1 原理"></a>2.1 原理</h3><p>从原理上来说，动画其实只有2种：</p>
+<ul>
+<li><p>逐帧动画：</p>
+<p>逐帧动画就是动画的每一帧都独立地保存在媒体内，连续播放这些帧即形成了连续动画，而用户需要保存每一帧的所有像素数据， 可以认为逐帧动画的每一帧图像都是在其他地方预先渲染好的（PS，AE等）。</p>
+<p>比如一个30FPS(Frame Per Second)，像素大小为<code>(480*240)</code>的逐帧动画，用户需要保存30张图片的像素数据，并在1秒内将这30张图片顺序播放。比如Gif格式的动画，只是将这些像素打包在一起以减少了部分空间。</p>
+<p>从广义上来说，视频都属于这个范围。由于目前项目中gif动画使用的最广泛，这里以Gif为代表。</p>
+</li>
+<li><p>关键帧动画：</p>
+<p>关键帧动画就是不保存动画的每一帧，而通过前后两个关键帧来自动计算中间的过度画面。计算机可以根据前后两个关键帧的数据自动插值补全中间的动画。</p>
+<p>比如以位移动画来说，一个图像从a点移动到b点，在a点会有一个关键帧，在b点会有另一个关键帧，至于关键帧之间的中间帧，计算机会自动插值计算。还可以通过更改插值器等操作来修改这一过程。Lottie属于关键帧动画。</p>
+</li>
+</ul>
+<h3 id="2-2-对比"><a href="#2-2-对比" class="headerlink" title="2.2 对比"></a>2.2 对比</h3><p>从实现上来说，我们在Android开发中使用动画主要有下面几种选择：</p>
+<ul>
+<li>Gif与序列帧</li>
+<li>程序实现动画（使用属性动画接口等）</li>
+<li>Lottie</li>
+</ul>
+<p>而Lottie是基于属性动画实现的，其实现步骤大致如下：</p>
+<p><img src="/images/8C1EF245-2CEC-4EEE-AE59-296CAD1018EC.png" alt=""></p>
+<p>Lottie实际上做的工作是自动根据UE导出的关键帧数据来绘制动画，因此，就性能上来说，Lottie多了一个反序列化json文件到内存中的开销，性能必定是低于直接用程序绘制的。但也正因为如此，这个大大提高了程序员的实现动画的效率，再也不用根据UE给的动画文件手动调整动画参数，这些都交给Lottie库自动完成了。</p>
+<ul>
+<li>和Gif以及序列帧的对比：</li>
+</ul>
+<p>Gif动画或者序列帧的性能瓶颈主要在于每一帧替换纹理引起的state validation阶段，即每一帧替换纹理的CPU开销(非GPU)是比较大的。当然还有一种Gif或者序列帧的实现方式将每一帧的纹理合并在一张纹理上加载进内存，通过每一帧改变纹理坐标进行动画播放，这种方式性能上是比较好的，但是由于要一次加载所有纹理，对内存的消耗很大，只能适用于帧数不多，体积比较小的Gif或者序列帧文件。</p>
+<p>而Lottie的性能开销主要在于根据关键帧数值实时的计算出每一帧数据进行绘制，如果动画越复杂，实时计算出每一帧的开销就越大。因此，在CPU性能上，并不能断言Lottie和Gif谁更优，这取决于实际使用的动画场景。但是由于Lottie不需要加载每一帧纹理，因此，在内存上肯定是由于GIf的。</p>
+<table>
+<thead>
+<tr>
+<th>性能对比</th>
+<th>CPU开销</th>
+<th>内存开销</th>
+<th>建议使用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gif</td>
+<td>需要具体分析</td>
+<td>高</td>
+<td>非常复杂的动画</td>
+</tr>
+<tr>
+<td>Lottie</td>
+<td>需要具体分析</td>
+<td>低</td>
+<td>相对简单的动画</td>
+</tr>
+</tbody>
+</table>
+<p>实际上，Lottie并不是代替Gif的一种方案，在动画非常复杂的情况下，Lottie并不能实现。Lottie实际上做的是代替大部分的程序绘制动画，避免UE实现一次，RD再实现一次的重复劳动。</p>
+<h2 id="3、实际使用场景分析"><a href="#3、实际使用场景分析" class="headerlink" title="3、实际使用场景分析"></a>3、实际使用场景分析</h2><p><img src="/images/Example1.gif" alt=""></p>
+<p>Lottie由于关键帧的数据是通过UE导出的json文件反序列化而来（具体源码分析请参见前一篇文章）。因此，对于需要在动画中间动态改变一些信息的需求目前没法实现，比如需要在动画中间某段时间动态改变动画的颜色或者速度等，Lottie目前是不能直接使用的，需要对Lottie进行开发。</p>
+<p>另外在实际使用Lottie过程中还有一点比较局限，就是如果想对当前View中的某些部件进行动画，比如想对一个Button进行放大缩小动画，Lottie目前还不支持，需要自己实现。</p>
+<p>最后一点就是Lottie也一直在更新，现在对于AE中的某些效果还没有实现，即UE如果使用了Lottie不支持的一些属性实现动画，那么导出的json文件Lottie是无法正确显示的。但是这一点风险可控，因为这个在debug阶段一定可以发现。</p>
+<p>总结下来，Lottie目前最适合的使用场景是那些相对比较独立的动画，即动画过程中不会动态调整，比如Loading动画、引导动画这些。在动画不是非常复杂的情况下，可以代替大部分的Gif动画。Lottie这个库的主要价值在于提升实现动画的开发效率，避免了RD与UE重复实现同一个动画的工作，并且可以完美的实现UE所设计的动画效果。</p>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/05/20/动画原理与Lottie源码分析/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          Android动画原理与Lottie库源码分析
+        
+      </div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+
+
+    </div>
+    <div class="mb-search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+<footer id="footer">
+	<h1 class="footer-blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<span class="copyright">
+		&copy; 2019 Ma Yuancheng<br>
+		Modify from <a href="http://sanographix.github.io/tumblr/apollo/" target="_blank">Apollo</a> theme, designed by <a href="http://www.sanographix.net/" target="_blank">SANOGRAPHIX.NET</a><br>
+		Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	</span>
+</footer>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+  </div>
+</body>
+</html>

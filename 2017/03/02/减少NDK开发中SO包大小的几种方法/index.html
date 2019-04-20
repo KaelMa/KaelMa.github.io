@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>减少Android NDK开发中SO包大小的几种方法 | KaelMa</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="背景这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。 下面整理了一些可以用于减少NDK开发中Android">
+<meta name="keywords" content="ndk">
+<meta property="og:type" content="article">
+<meta property="og:title" content="减少Android NDK开发中SO包大小的几种方法">
+<meta property="og:url" content="http://yoursite.com/2017/03/02/减少NDK开发中SO包大小的几种方法/index.html">
+<meta property="og:site_name" content="KaelMa">
+<meta property="og:description" content="背景这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。 下面整理了一些可以用于减少NDK开发中Android">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2017-09-09T07:58:52.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="减少Android NDK开发中SO包大小的几种方法">
+<meta name="twitter:description" content="背景这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。 下面整理了一些可以用于减少NDK开发中Android">
+  
+    <link rel="alternative" href="/atom.xml" title="KaelMa" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head></html>
+<body>
+  <div id="container">
+    <div class="mobile-nav-panel">
+	<i class="icon-reorder icon-large"></i>
+</div>
+<header id="header">
+	<h1 class="blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<nav class="nav">
+		<ul>
+			<li><a href="/">Home</a></li><li><a href="/archives">Archives</a></li>
+			<li><a id="nav-search-btn" class="nav-icon" title="Search"></a></li>
+			<li><a href="/atom.xml" id="nav-rss-link" class="nav-icon" title="RSS Feed"></a></li>
+		</ul>
+	</nav>
+	<div id="search-form-wrap">
+		<form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+	</div>
+</header>
+    <div id="main">
+      <article id="post-减少NDK开发中SO包大小的几种方法" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/03/02/减少NDK开发中SO包大小的几种方法/" class="article-date">
+  <time datetime="2017-03-02T07:20:02.000Z" itemprop="datePublished">2017-03-02</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 class="article-title entry-title" itemprop="name">
+      减少Android NDK开发中SO包大小的几种方法
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>这周在做Yoga包的压缩工作。Yoga本身是用BUCK脚本编译的，而最终编译出几个包大小大总共约为7M，不能满足项目中对于APK大小的限制，因此需要对它进行压缩。这里先将Yoga编译脚本用CMAKE重新改写，以便可以在android studio中直接使用并输出一个AAR的包。后面又对它进行了压缩，最终将Yoga包的大小压缩到200多KB。</p>
+<p>下面整理了一些可以用于减少NDK开发中Android SO包大小的方法：</p>
+<h2 id="1-STL的使用方式"><a href="#1-STL的使用方式" class="headerlink" title="1.STL的使用方式"></a>1.STL的使用方式</h2><p>对于C++的library，引用方式有2种：</p>
+<ul>
+<li><p>静态方式(static)</p>
+</li>
+<li><p>动态方式(shared)</p>
+</li>
+</ul>
+<p>其中，静态方式在编译时会将用到的相关代码直接复制到目的文件中；而动态方式则会将相关的代码打成so文件，以便多次引用。由于编译器在编译时并不能知道所有被引用的地方，所以同时会打入了很多不相关的代码。</p>
+<p>所以，如果项目中引用library的函数较多时，用动态方式可以避免多次拷贝，节省空间。相反，则直接使用静态方式会更节省空间。</p>
+<p>NDK开发中，可以通过gradle的设置来配置：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">defaultConfig&#123;</span><br><span class="line">  externalNativeBuild&#123;</span><br><span class="line">    cmake&#123;</span><br><span class="line">      <span class="comment">// gnustl_shared 动态</span></span><br><span class="line">      arguments <span class="string">"-DANDROID_STL=gnustl_static"</span> </span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在Yoga中，项目里的stl使用较少时，安卓运行时使用static的方式，而不是shared，所以这里采用static的方式。在采取了这种方式后，包的大小从2.7M缩减到了2M。</p>
+<h2 id="2-不使用Exception和RTTI"><a href="#2-不使用Exception和RTTI" class="headerlink" title="2.不使用Exception和RTTI"></a>2.不使用Exception和RTTI</h2><p>C++的exception和RTTI功能在NDK中默认是关闭的，但是可以通过配置打开的。</p>
+<p>Android.mk:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">APP_CPPFLAGS += -fexceptions -frtti</span><br></pre></td></tr></table></figure>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_CXX_FLAGS&#125; -fexceptions -frtti"</span>)</span><br></pre></td></tr></table></figure>
+<p>Exception和RTTI会显著的增加包的体积，所以非必须的时候，没有必要使用。</p>
+<h3 id="RTTI"><a href="#RTTI" class="headerlink" title="RTTI"></a>RTTI</h3><p>通过RTTI，能够通过基类的指针或引用来检索其所指对象的实际类型，即运行时获取对象的实际类型。C++通过下面两个操作符提供RTTI。</p>
+<p>（1）typeid：返回指针或引用所指对象的实际类型。</p>
+<p>（2）dynamic_cast：将基类类型的指针或引用安全的转换为派生类型的指针或引用。</p>
+<p>在yoga中，RTTI的选项是默认打开的，而代码中其实并没有用到相关的功能,这里可以直接关闭。</p>
+<h3 id="Exception"><a href="#Exception" class="headerlink" title="Exception"></a>Exception</h3><p>使用C++的exception会增加包的大小，而目前JNI对C++的exception的支持是有bug的，比如下面这段代码就会引起程序的crash（对于低版本的android NDK）。因此要在程序中引入exception要自己实现相关逻辑，yoga就是这么做的,这个又增加了一些包体大小。对于开发者来说，exception可以帮助快速定位问题，而对于使用者并不是那么重要，这里可以去掉。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125; <span class="keyword">catch</span> (<span class="built_in">std</span>::exception&amp; e) &#123;</span><br><span class="line">    env-&gt;ThrowNew(env-&gt;FindClass(<span class="string">"java/lang/Exception"</span>), <span class="string">"Error occured"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在yoga中，在关闭RTTI和Exception功能并把exception相关的代码都去掉后，包的大小从2M缩减到的1.8M。</p>
+<h2 id="3-使用-gc-sections去除没有用到的函数"><a href="#3-使用-gc-sections去除没有用到的函数" class="headerlink" title="3.使用 gc-sections去除没有用到的函数"></a>3.使用 gc-sections去除没有用到的函数</h2><p>去除未使用的代码显然可以减少包体的大小，而在NDK的开发中，并不需要手动的来做这一点。可以开启编译器的gc-sections选项，让编译器自动的帮你做到这一点。</p>
+<p>编译器可以配置自动去除未使用的函数和变量，以下是配置方式：</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 去除未使用函数与变量</span></span><br><span class="line"><span class="keyword">set</span>(CMAKE_C_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125; -ffunction-sections -fdata-sections"</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125;"</span>)</span><br><span class="line"><span class="comment"># 设置去除未使用代码的链接flag</span></span><br><span class="line"><span class="keyword">SET_TARGET_PROPERTIES</span>(yoga PROPERTIES LINK_FLAGS <span class="string">"-Wl,--gc-sections"</span>)</span><br></pre></td></tr></table></figure>
+<p>Android.mk:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">LOCAL_CPPFLAGS += -ffunction-sections -fdata-sections</span><br><span class="line">LOCAL_CFLAGS += -ffunction-sections -fdata-sections </span><br><span class="line">LOCAL_LDFLAGS += -Wl,--gc-sections</span><br></pre></td></tr></table></figure>
+<h2 id="4-去除冗余代码"><a href="#4-去除冗余代码" class="headerlink" title="4.去除冗余代码"></a>4.去除冗余代码</h2><p>在NDK中，链接器还有一个选项 “-icf = safe”，可以用于去除代码中的冗余代码。但是要注意的是，这个选项也有可能去除定义好的inline函数，这里必须要做好权衡。</p>
+<p>下面是配置方式：</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET_TARGET_PROPERTIES</span>(yoga PROPERTIES LINK_FLAGS <span class="string">"-Wl,--gc-sections,--icf=safe"</span>)</span><br></pre></td></tr></table></figure>
+<p>Android.mk:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LOCAL_LDFLAGS += -Wl,--gc-sections,--icf=safe</span><br></pre></td></tr></table></figure>
+<h2 id="5-设置编译器的优化flag"><a href="#5-设置编译器的优化flag" class="headerlink" title="5.设置编译器的优化flag"></a>5.设置编译器的优化flag</h2><p>编译器有个优化flag可以设置，分别是-Os（体积最小），-O3(性能最优)等。这里将编译器的优化flag设置为-Os，以便减少体积。</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_C_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125; -Os"</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125;"</span>)</span><br></pre></td></tr></table></figure>
+<p>Android.mk</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LOCAL_CPPFLAGS += -Os</span><br><span class="line">LOCAL_CFLAGS += -Os</span><br></pre></td></tr></table></figure>
+<p>在采用了3，4，5这几种方式后，Yoga包的大小从1.8M减少到了1.7M。这里减少的比较少是因为Yoga在这方面已经做的挺好了，其他的库可能会更有效。</p>
+<h2 id="6-设置编译器的-Visibility-Feature"><a href="#6-设置编译器的-Visibility-Feature" class="headerlink" title="6.设置编译器的 Visibility Feature"></a>6.设置编译器的 Visibility Feature</h2><p>还有个减少包体大小的方法，就是设置编译器的visibility feature。</p>
+<p>Visibility Feature就是用来控制在哪些函数可以在符号表中被输入，由于C++并不是完全面向对象的，非类的方法并没有public这种修饰符，因此，要用Visibility Feature来控制哪些函数可以被外部调用。而JNI提供了一个宏-JNIEXPORT来控制这点。所以只要对函数加上这个宏，像这样：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JNIEXPORT就是控制可见的宏</span></span><br><span class="line"><span class="comment">// JNICALL在NDK这里没有什么意义，只是个标识宏</span></span><br><span class="line"><span class="function">JNIEXPORT <span class="keyword">void</span> JNICALL <span class="title">Java_ClassName_MethodName</span><span class="params">(JNIEnv *env, jobject obj, jstring javaString)</span></span></span><br></pre></td></tr></table></figure>
+<p>然后在编译器的FLAGS选项开启 -fvisibility = hidden 就可以。这样，不仅可以控制函数的可见性，并且可以减少包体的大小。</p>
+<p>CMake:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_C_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125; -fvisibility=hidden"</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_FLAGS <span class="string">"$&#123;CMAKE_C_FLAGS&#125;"</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="7-设置编译器的Strip选项"><a href="#7-设置编译器的Strip选项" class="headerlink" title="7.设置编译器的Strip选项"></a>7.设置编译器的Strip选项</h2><p>我在把Yoga库编译成AAR包的过程中发现，它的体积明显会大于最后打包进APK的大小，这点非常不合理，但是无法找到原因。</p>
+<p>最终搜索到这是谷歌NDK的一个bug，在打AAR包的过程中，无论是debug版本还是release版本，NDK toolchain不会自动的把方便调试的C++ 符号表(Symbol Table)中数据删除，而只会在打APK包的时候进行这一操作。这就导致了打成的AAR包中的SO体积明显偏大。</p>
+<p>详细描述可以参见这个ISSUE: <a href="https://code.google.com/p/android/issues/detail?id=222831" target="_blank" rel="noopener">https://code.google.com/p/android/issues/detail?id=222831</a></p>
+<p>找到原因后这个问题就很好解决了，可以手动的在链接选项中加入 strip参数，配置如下所示：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET_TARGET_PROPERTIES</span>(yoga PROPERTIES LINK_FLAGS <span class="string">"-Wl,--gc-sections,--icf=safe,-s"</span>)</span><br></pre></td></tr></table></figure>
+<p>在强制进行strip操作后，将Yoga包的体积从1.7M成功减少到了282KB。</p>
+<h2 id="8-去除C-代码中的iostream相关代码"><a href="#8-去除C-代码中的iostream相关代码" class="headerlink" title="8.去除C++代码中的iostream相关代码"></a>8.去除C++代码中的iostream相关代码</h2><p>使用STL中的iostream相关库会明显的增加包的体积，而NDK本身是有预编译库(android/log.h)可以代替这一功能的，在Yoga这里，用log的函数代替了iostream中的所有函数，如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//代替所有的iostream库里函数</span></span><br><span class="line"><span class="comment">//cout &lt;&lt; obj-&gt;toString() &lt;&lt; endl;</span></span><br><span class="line">__android_log_print(ANDROID_LOG_VERBOSE,<span class="string">"Yoga"</span>,<span class="string">"Node is: %s"</span>,obj-&gt;toString().c_str());</span><br></pre></td></tr></table></figure>
+<p>在做完代替之后，yoga包的体积从282KB减少到了218KB。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在做完这一系列工作后，最终成功的压缩了Yoga包的体积，从几M到最后输出一个218KB的AAR包提供使用。以上几种方法并不局限于Yoga包的缩减。在NDK开发中，要缩减SO包的体积都可以按照这几种方式尝试一下。</p>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ndk/">ndk</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+    
+<nav id="article-nav">
+  
+    <a href="/2017/04/02/Android虚拟机中的内存分配与OOM问题/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android虚拟机中的内存分配与OOM问题
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+
+
+
+    </div>
+    <div class="mb-search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+<footer id="footer">
+	<h1 class="footer-blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<span class="copyright">
+		&copy; 2019 Ma Yuancheng<br>
+		Modify from <a href="http://sanographix.github.io/tumblr/apollo/" target="_blank">Apollo</a> theme, designed by <a href="http://www.sanographix.net/" target="_blank">SANOGRAPHIX.NET</a><br>
+		Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	</span>
+</footer>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+  </div>
+</body>
+</html>

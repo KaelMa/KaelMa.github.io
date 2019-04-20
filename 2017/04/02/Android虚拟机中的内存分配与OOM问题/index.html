@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>Android虚拟机中的内存分配与OOM问题 | KaelMa</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="背景知识Android中每个App默认情况下是运行在一个独立进程中的, 而这个独立进程正是从Zygote孵化出来的VM进程， 也就是说, 也就是说每个Android APP在运行时会启动一个Java虚拟机。并且系统会给它分配固定的内存空间(手机厂商会根据手机的配置情况来对其进行调整)。 一、Android VM的内存空间Android是一个多任务系统, 为了保证多任务的运行, Android给每个">
+<meta name="keywords" content="android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android虚拟机中的内存分配与OOM问题">
+<meta property="og:url" content="http://yoursite.com/2017/04/02/Android虚拟机中的内存分配与OOM问题/index.html">
+<meta property="og:site_name" content="KaelMa">
+<meta property="og:description" content="背景知识Android中每个App默认情况下是运行在一个独立进程中的, 而这个独立进程正是从Zygote孵化出来的VM进程， 也就是说, 也就是说每个Android APP在运行时会启动一个Java虚拟机。并且系统会给它分配固定的内存空间(手机厂商会根据手机的配置情况来对其进行调整)。 一、Android VM的内存空间Android是一个多任务系统, 为了保证多任务的运行, Android给每个">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2017-09-09T07:58:52.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android虚拟机中的内存分配与OOM问题">
+<meta name="twitter:description" content="背景知识Android中每个App默认情况下是运行在一个独立进程中的, 而这个独立进程正是从Zygote孵化出来的VM进程， 也就是说, 也就是说每个Android APP在运行时会启动一个Java虚拟机。并且系统会给它分配固定的内存空间(手机厂商会根据手机的配置情况来对其进行调整)。 一、Android VM的内存空间Android是一个多任务系统, 为了保证多任务的运行, Android给每个">
+  
+    <link rel="alternative" href="/atom.xml" title="KaelMa" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head></html>
+<body>
+  <div id="container">
+    <div class="mobile-nav-panel">
+	<i class="icon-reorder icon-large"></i>
+</div>
+<header id="header">
+	<h1 class="blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<nav class="nav">
+		<ul>
+			<li><a href="/">Home</a></li><li><a href="/archives">Archives</a></li>
+			<li><a id="nav-search-btn" class="nav-icon" title="Search"></a></li>
+			<li><a href="/atom.xml" id="nav-rss-link" class="nav-icon" title="RSS Feed"></a></li>
+		</ul>
+	</nav>
+	<div id="search-form-wrap">
+		<form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+	</div>
+</header>
+    <div id="main">
+      <article id="post-Android虚拟机中的内存分配与OOM问题" class="post">
+	<footer class="entry-meta-header">
+		<span class="meta-elements date">
+			<a href="/2017/04/02/Android虚拟机中的内存分配与OOM问题/" class="article-date">
+  <time datetime="2017-04-02T07:20:02.000Z" itemprop="datePublished">2017-04-02</time>
+</a>
+		</span>
+		<span class="meta-elements author">Ma Yuancheng</span>
+		<div class="commentscount">
+			
+		</div>
+	</footer>
+	
+	<header class="entry-header">
+		
+  
+    <h1 class="article-title entry-title" itemprop="name">
+      Android虚拟机中的内存分配与OOM问题
+    </h1>
+  
+
+	</header>
+	<div class="entry-content">
+		
+    	<h2 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h2><p>Android中每个App默认情况下是运行在一个独立进程中的, 而这个独立进程正是从Zygote孵化出来的VM进程， 也就是说, 也就是说每个Android APP在运行时会启动一个Java虚拟机。并且系统会给它分配固定的内存空间(手机厂商会根据手机的配置情况来对其进行调整)。</p>
+<h2 id="一、Android-VM的内存空间"><a href="#一、Android-VM的内存空间" class="headerlink" title="一、Android VM的内存空间"></a>一、Android VM的内存空间</h2><p>Android是一个多任务系统, 为了保证多任务的运行, Android给每个App可使用的Heap大小设定了一个限定值.这个值是系统设置的prop值,  保存在<code>System/build.prop</code>文件中. 一般国内的手机厂商都会做修改, 根据手机配置不同而不同, 可以直接打开查看与修改。</p>
+<p>其中和虚拟机内存相关的主要有以下三个：</p>
+<ol>
+<li><p><strong>dalvik.vm.heapstartsize</strong></p>
+<p>– App启动后，系统分配给它的Heap初始大小，随着App使用可增加。</p>
+</li>
+<li><p><strong>dalvik.vm.heapgrowthlimit</strong></p>
+<p>– 默认情况下, App可使用的Heap的最大值, 超过这个值就会产生OOM.</p>
+</li>
+<li><p><strong>dalvik.vm.heapsize</strong></p>
+<p>– 如果App的manifest文件中配置了largeHeap属性, 那么App可使用的Heap的最大值为此项设定值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;application</span><br><span class="line">    android:largeHeap=&quot;true&quot;&gt;</span><br><span class="line">    ...</span><br><span class="line">&lt;/application&gt;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>所以对于同一个手机，不开启<code>largeHeap</code>属性时与多进程时，每个APP的虚拟机分配的内存的上限都是<code>heapgrowthlimit</code>。</p>
+<h3 id="1-查看内存的API"><a href="#1-查看内存的API" class="headerlink" title="1.查看内存的API"></a>1.查看内存的API</h3><p>Android在<code>ActivityManager</code>类中提供了API可以运行时获取这些属性值，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//ActivityManager的getMemoryClass()获得内用正常情况下内存的大小，即heapgrowthlimit的值</span></span><br><span class="line"><span class="comment">//ActivityManager的getLargeMemoryClass()可以获得开启largeHeap最大的内存大小，即heapsize的指</span></span><br><span class="line">ActivityManager activityManager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);</span><br><span class="line">activityManager.getMemoryClass();</span><br><span class="line">activityManager.getLargeMemoryClass();</span><br></pre></td></tr></table></figure>
+<h2 id="二、Android-VM内存分配流程"><a href="#二、Android-VM内存分配流程" class="headerlink" title="二、Android VM内存分配流程"></a>二、Android VM内存分配流程</h2><p>虚拟机分配内存的具体源码可以AOSP的<a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/alloc/Heap.cpp" target="_blank" rel="noopener">Heap.cpp</a>文件中查看：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Try as hard as possible to allocate some memory.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> *<span class="title">tryMalloc</span><span class="params">(<span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> figure out better heuristics</span></span><br><span class="line"><span class="comment">//    There will be a lot of churn if someone allocates a bunch of</span></span><br><span class="line"><span class="comment">//    big objects in a row, and we hit the frag case each time.</span></span><br><span class="line"><span class="comment">//    A full GC for each.</span></span><br><span class="line"><span class="comment">//    Maybe we grow the heap in bigger leaps</span></span><br><span class="line"><span class="comment">//    Maybe we skip the GC if the size is large and we did one recently</span></span><br><span class="line"><span class="comment">//      (number of allocations ago) (watch for thread effects)</span></span><br><span class="line"><span class="comment">//    DeflateTest allocs a bunch of ~128k buffers w/in 0-5 allocs of each other</span></span><br><span class="line"><span class="comment">//      (or, at least, there are only 0-5 objects swept each time)</span></span><br><span class="line">    ptr = dvmHeapSourceAlloc(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * The allocation failed.  If the GC is running, block until it</span></span><br><span class="line"><span class="comment">     * completes and retry.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">if</span> (gDvm.gcHeap-&gt;gcRunning) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * The GC is concurrently tracing the heap.  Release the heap</span></span><br><span class="line"><span class="comment">         * lock, wait for the GC to complete, and retrying allocating.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        dvmWaitForConcurrentGcToComplete();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">/*</span></span><br><span class="line"><span class="comment">       * Try a foreground GC since a concurrent GC is not currently running.</span></span><br><span class="line"><span class="comment">       */</span></span><br><span class="line">      gcForMalloc(<span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ptr = dvmHeapSourceAlloc(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Even that didn't work;  this is an exceptional state.</span></span><br><span class="line"><span class="comment">     * Try harder, growing the heap if necessary.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    ptr = dvmHeapSourceAllocAndGrow(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">size_t</span> newHeapSize;</span><br><span class="line">        newHeapSize = dvmHeapSourceGetIdealFootprint();</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> may want to grow a little bit more so that the amount of free</span></span><br><span class="line"><span class="comment">//      space is equal to the old free space + the utilization slop for</span></span><br><span class="line"><span class="comment">//      the new allocation.</span></span><br><span class="line">        LOGI_HEAP(<span class="string">"Grow heap (frag case) to "</span></span><br><span class="line">                <span class="string">"%zu.%03zuMB for %zu-byte allocation"</span>,</span><br><span class="line">                FRACTIONAL_MB(newHeapSize), size);</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Most allocations should have succeeded by now, so the heap</span></span><br><span class="line"><span class="comment">     * is really full, really fragmented, or the requested size is</span></span><br><span class="line"><span class="comment">     * really big.  Do another GC, collecting SoftReferences this</span></span><br><span class="line"><span class="comment">     * time.  The VM spec requires that all SoftReferences have</span></span><br><span class="line"><span class="comment">     * been collected and cleared before throwing an OOME.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> wait for the finalizers from the previous GC to finish</span></span><br><span class="line">    LOGI_HEAP(<span class="string">"Forcing collection of SoftReferences for %zu-byte allocation"</span>,</span><br><span class="line">            size);</span><br><span class="line">    gcForMalloc(<span class="literal">true</span>);</span><br><span class="line">    ptr = dvmHeapSourceAllocAndGrow(size);</span><br><span class="line">    <span class="keyword">if</span> (ptr != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> ptr;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> maybe wait for finalizers and try one last time</span></span><br><span class="line">    LOGE_HEAP(<span class="string">"Out of memory on a %zd-byte allocation."</span>, size);</span><br><span class="line"><span class="comment">//<span class="doctag">TODO:</span> tell the HeapSource to dump its state</span></span><br><span class="line">    dvmDumpThread(dvmThreadSelf(), <span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>具体流程如下：</p>
+<ol>
+<li>尝试分配，如果成功则返回，失败则转入步骤2</li>
+<li>判断是否gc正在进行垃圾回收，如果正在进行则等待回收完成之后，尝试分配。如果成功则返回，失败则转入步骤3</li>
+<li>自己启动gc进行垃圾回收，这里gcForMalloc的参数是false。所以不会回收软引用，回收完成后尝试分配，如果成功则返回，失败则转入步骤4</li>
+<li>调用dvmHeapSourceAllocAndGrow尝试分配，这个函数会扩张堆的大小，失败转入步骤5</li>
+<li>进入回收软引用阶段，这里gcForMalloc的参数是ture，所以需要回收软引用。然后再调用dvmHeapSourceAllocAndGrow尝试分配，如果失败则抛出OOM </li>
+</ol>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>所以产生OOM时，一定是java的堆中 <code>已有的内存 + 申请的内存 &gt;= heapgrowthlimit</code>导致的，不会因为手机目前物理内存是否紧张而改变 - 当物理内存非常紧张时系统会通过LowMemory Killer杀掉一些低优先级的进程。</p>
+<p>相应的，物理内存非常充足的情况也会有OOM的情况发生。</p>
+<h2 id="三、出现OOM的建议解决方案"><a href="#三、出现OOM的建议解决方案" class="headerlink" title="三、出现OOM的建议解决方案"></a>三、出现OOM的建议解决方案</h2><p>当APP出现OOM时，建议可以从以下两个方向来处理：</p>
+<ol>
+<li><strong>排查内存泄露问题</strong></li>
+</ol>
+<ul>
+<li>排查各个功能是否内存泄露情况，可以通过Android Studio中的<a href="https://developer.android.google.cn/studio/profile/am-memory.html" target="_blank" rel="noopener">MemoryMonitor</a>功能进行分析，Memory Monitor也集成了HPROF Viewer和Allocation Tracker可以分析内存快照与内存分配追踪。另外推荐一个工具，square公司开源的<a href="https://github.com/square/leakcanary" target="_blank" rel="noopener">leakcanary</a>，非常简洁好用。</li>
+</ul>
+<ul>
+<li>排查进程初始化时就直接申请并常驻内存的对象以及其他功能里申请的static对象或者单例对象的必要性。</li>
+</ul>
+<ol start="2">
+<li><p><strong>内存优化</strong><br>按照谷歌在youtube上发布的性能优化典范之内存篇，优化各功能的内存，或可参照<a href="http://www.csdn.net/article/2015-09-18/2825737" target="_blank" rel="noopener">胡凯的总结</a>。大致有以下这些，具体请参见原文：</p>
+<ul>
+<li><p>减少对象的内存占用</p>
+<ul>
+<li>使用更加轻量的数据结构</li>
+<li>避免在Android里使用enum</li>
+<li>减少Bitmap对象的内存占用</li>
+<li>使用更小的图片</li>
+</ul>
+</li>
+<li><p>内存对象的重复利用</p>
+<ul>
+<li><p>复用系统自带的资源</p>
+</li>
+<li><p>ListView中对ConvertView的复用</p>
+</li>
+<li><p>Bitmap对象的复用</p>
+</li>
+<li><p>避免在ondraw方法里执行对象的创建</p>
+</li>
+<li><p>StringBuilder代替String</p>
+</li>
+</ul>
+</li>
+<li><p>避免对象的内存泄露</p>
+<ul>
+<li>注意Activity的泄露</li>
+<li>考虑使用Applicaiton Context代替Activity Context</li>
+<li>注意临时Bitmap对象的及时回收</li>
+<li>注意监听器的注销</li>
+<li>注意缓存容器里的对象泄露</li>
+<li>注意Webview的泄露</li>
+<li>注意Cursor对象的及时关闭</li>
+</ul>
+</li>
+<li><p>内存使用策略的优化</p>
+<ul>
+<li>谨慎使用large heap</li>
+<li>综合考虑设备的内存阈值与其他因素设计合适的缓存大小</li>
+<li>onLowMemory与onTrimMemory</li>
+<li>资源文件需要选择合适的文件夹进行存放</li>
+<li>Try catch某些大内存分配的操作</li>
+<li>谨慎使用static对象</li>
+<li>特别留意单例对象中不合理的持有</li>
+<li>珍惜Services资源</li>
+<li>优化布局层次，减少内存消耗</li>
+<li>谨慎使用“抽象”编程</li>
+<li>使用nano protobufs序列化数据</li>
+<li>谨慎使用依赖注入框架</li>
+<li>谨慎使用多进程</li>
+<li>使用ProGuard来剔除不需要的代码</li>
+<li>谨慎使用第三方libraries</li>
+<li>考虑不同的实现方式来优化内存占用</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+
+    
+	</div>
+	<footer class="entry-footer">
+		<div class="entry-meta-footer">
+			<span class="category">
+				
+			</span>
+			<span class="tags">
+				
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/">android</a></li></ul>
+
+			</span>
+		</div>
+	</footer>
+	
+    
+<nav id="article-nav">
+  
+    <a href="/2017/05/20/动画原理与Lottie源码分析/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android动画原理与Lottie库源码分析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/03/02/减少NDK开发中SO包大小的几种方法/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
+        
+          减少Android NDK开发中SO包大小的几种方法
+        
+      </div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+
+
+    </div>
+    <div class="mb-search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+<footer id="footer">
+	<h1 class="footer-blog-title">
+		<a href="/">KaelMa</a>
+	</h1>
+	<span class="copyright">
+		&copy; 2019 Ma Yuancheng<br>
+		Modify from <a href="http://sanographix.github.io/tumblr/apollo/" target="_blank">Apollo</a> theme, designed by <a href="http://www.sanographix.net/" target="_blank">SANOGRAPHIX.NET</a><br>
+		Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	</span>
+</footer>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+  </div>
+</body>
+</html>
